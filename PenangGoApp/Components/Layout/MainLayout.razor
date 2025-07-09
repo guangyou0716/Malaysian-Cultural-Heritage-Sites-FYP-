@@ -1,0 +1,47 @@
+﻿@inherits LayoutComponentBase
+@inject PenangGoApp.Services.OfflineSyncService OfflineSyncService
+@inject PenangGoApp.Services.NotificationService NotificationService
+
+@if (!OfflineSyncService.IsOnline)
+{
+    <div style="background: #ffc107; color: #222; padding: 8px; text-align: center;">
+        Offline mode: You are viewing cached content. Changes will sync when online.
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(notificationTitle))
+{
+    <div class="alert alert-info" style="position:fixed;top:0;right:0;z-index:9999;">
+        <b>@notificationTitle</b><br />@notificationBody
+    </div>
+}
+
+@Body
+
+@code {
+    private string notificationTitle;
+    private string notificationBody;
+    private System.Timers.Timer timer;
+
+    protected override void OnInitialized()
+    {
+        NotificationService.OnNotificationReceived += ShowNotification;
+    }
+    void ShowNotification(string title, string body)
+    {
+        notificationTitle = title;
+        notificationBody = body;
+        StateHasChanged();
+        timer?.Dispose();
+        timer = new System.Timers.Timer(5000);
+        timer.Elapsed += (s, e) => HideNotification();
+        timer.AutoReset = false;
+        timer.Start();
+    }
+    void HideNotification()
+    {
+        notificationTitle = null;
+        notificationBody = null;
+        InvokeAsync(StateHasChanged);
+    }
+}

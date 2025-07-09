@@ -1,0 +1,63 @@
+@page "/events"
+@inject PenangGoApp.Services.EventService EventService
+@inject PenangGoApp.Services.BookingService BookingService
+@inject PenangGoApp.Services.AuthService AuthService
+@inject PenangGoApp.Services.HeritageSiteService HeritageSiteService
+
+<h3 class="mb-4 text-center">Penang Events & Tours</h3>
+@if (events == null)
+{
+    <p>Loading events...</p>
+}
+else if (events.Count == 0)
+{
+    <div class="alert alert-info">No events or tours available at the moment.</div>
+}
+else
+{
+    <div class="container">
+        <div class="row g-4">
+            @foreach (var ev in events)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        @if (!string.IsNullOrEmpty(ev.ImageUrl))
+                        {
+                            <img src="@ev.ImageUrl" class="card-img-top" alt="@ev.Name" style="max-height:180px;object-fit:cover;" />
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@ev.Name</h5>
+                            <div class="mb-2"><span class="badge bg-info">@ev.Date.ToString("yyyy-MM-dd")</span></div>
+                            <div class="mb-2"><i class="bi bi-geo-alt"></i> @ev.Location</div>
+                            <p class="card-text">@ev.Description</p>
+                            @if (ev.IsTour && AuthService.IsLoggedIn)
+                            {
+                                <button class="btn btn-primary btn-sm mt-2 w-100" @onclick="() => BookTour(ev.Id)">Book Tour</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+@if (!string.IsNullOrEmpty(confirmation))
+{
+    <div class="alert alert-success mt-3 text-center">@confirmation</div>
+}
+
+@code {
+    private List<PenangGoApp.Data.Event> events;
+    private string confirmation;
+
+    protected override async Task OnInitializedAsync()
+    {
+        events = await EventService.GetAllAsync();
+    }
+
+    private async Task BookTour(int eventId)
+    {
+        await BookingService.BookEventAsync(AuthService.CurrentUser.Id, eventId);
+        confirmation = "Tour booked successfully!";
+    }
+} 

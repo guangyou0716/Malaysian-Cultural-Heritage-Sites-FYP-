@@ -1,0 +1,56 @@
+@page "/mybookmarks"
+@inject PenangGoApp.Services.BookmarkService BookmarkService
+@inject PenangGoApp.Services.AuthService AuthService
+@inject PenangGoApp.Services.HeritageSiteService HeritageSiteService
+
+<h3 class="mb-4 text-center">My Bookmarked Sites</h3>
+@if (!AuthService.IsLoggedIn)
+{
+    <div class="alert alert-warning text-center">Please log in to view your bookmarks.</div>
+}
+else if (bookmarks == null)
+{
+    <p>Loading bookmarks...</p>
+}
+else if (bookmarks.Count == 0)
+{
+    <div class="alert alert-info text-center">You have no bookmarks yet.</div>
+}
+else
+{
+    <div class="container">
+        <div class="row g-4">
+            @foreach (var bookmark in bookmarks)
+            {
+                var site = heritageSites.FirstOrDefault(s => s.Id == bookmark.SiteId);
+                if (site != null)
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm">
+                            <img src="@site.ImageUrl" class="card-img-top" alt="@site.Name" style="max-height:180px;object-fit:cover;" />
+                            <div class="card-body">
+                                <h5 class="card-title">@site.Name</h5>
+                                <p class="card-text">@site.Description</p>
+                                <a class="btn btn-primary w-100" href="/info?siteId=@site.Id">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<PenangGoApp.Data.Bookmark> bookmarks;
+    private List<PenangGoApp.Data.HeritageSite> heritageSites = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.IsLoggedIn)
+        {
+            bookmarks = await BookmarkService.GetUserBookmarksAsync(AuthService.CurrentUser.Id);
+            heritageSites = await HeritageSiteService.GetAllAsync();
+        }
+    }
+} 

@@ -1,0 +1,60 @@
+@page "/arview"
+@inject PenangGoApp.IARService ARService
+@inject PenangGoApp.Services.AuthService AuthService
+@inject PenangGoApp.Services.ARContentService ARContentService
+
+<h3 class="mb-4 text-center">Augmented Reality (AR) Experiences</h3>
+@if (arContents == null)
+{
+    <p>Loading AR content...</p>
+}
+else if (arContents.Count == 0)
+{
+    <div class="alert alert-info">No AR content available at the moment.</div>
+}
+else
+{
+    <div class="container">
+        <div class="row g-4">
+            @foreach (var ar in arContents)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <img src="@ar.ImageUrl" class="card-img-top" alt="@ar.Title" style="max-height:180px;object-fit:cover;" />
+                        <div class="card-body">
+                            <h5 class="card-title">@ar.Title</h5>
+                            <p class="card-text">@ar.Description</p>
+                            @if (ar.HeritageSite != null)
+                            {
+                                <span class="badge bg-info mb-2">@ar.HeritageSite.Name</span><br />
+                            }
+                            <button class="btn btn-success w-100 mt-2" @onclick="() => ActivateAR(ar.Id)">Activate AR</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+@if (AuthService.IsAdmin)
+{
+    <div class="mt-4 text-center">
+        <h5>Admin: AR Content Management</h5>
+        <a class="btn btn-warning" href="/admin">Upload/Update AR Content</a>
+    </div>
+}
+
+@code {
+    private List<PenangGoApp.Data.ARContent> arContents;
+
+    protected override async Task OnInitializedAsync()
+    {
+        arContents = await ARContentService.GetAllAsync();
+    }
+
+    private void ActivateAR(int arId)
+    {
+        // TODO: Pass AR content/model info to native AR view
+        ARService.OpenARView();
+    }
+} 

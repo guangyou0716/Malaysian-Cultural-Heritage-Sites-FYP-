@@ -1,0 +1,86 @@
+@page "/admin-dashboard"
+@inject PenangGoApp.Services.AuthService AuthService
+@inject PenangGoApp.Services.HeritageSiteService HeritageSiteService
+@inject PenangGoApp.Services.EventService EventService
+@inject PenangGoApp.Services.BookingService BookingService
+@inject PenangGoApp.Services.ReviewService ReviewService
+@inject PenangGoApp.Data.PenangGoContext DbContext
+@inject NavigationManager Navigation
+
+@if (!AuthService.IsAdmin)
+{
+    <div class="alert alert-danger">Access denied. Admins only.</div>
+    <button class="btn btn-primary" @onclick="GoDashboard">Back to Dashboard</button>
+    @code {
+        void GoDashboard() => Navigation.NavigateTo("/dashboard");
+    }
+    return;
+}
+
+<div class="container mt-4">
+    <h3 class="mb-4 text-center">Admin CMS & Analytics Dashboard</h3>
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-10">
+            <div class="d-flex flex-wrap gap-3 justify-content-center mb-4">
+                <a class="btn btn-info" href="/admin-sites">Manage Heritage Sites</a>
+                <a class="btn btn-info" href="/admin-events">Manage Events/Tours</a>
+                <a class="btn btn-info" href="/admin">Manage AR Content</a>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Users</h5>
+                            <span class="display-6">@userCount</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Heritage Sites</h5>
+                            <span class="display-6">@siteCount</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Events</h5>
+                            <span class="display-6">@eventCount</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Bookings</h5>
+                            <span class="display-6">@bookingCount</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Reviews</h5>
+                            <span class="display-6">@reviewCount</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int userCount, siteCount, eventCount, bookingCount, reviewCount;
+
+    protected override void OnInitialized()
+    {
+        userCount = DbContext.Users.Count();
+        siteCount = DbContext.HeritageSites.Count();
+        eventCount = DbContext.Events.Count();
+        bookingCount = DbContext.Bookings.Count();
+        reviewCount = DbContext.Reviews.Count();
+    }
+} 
