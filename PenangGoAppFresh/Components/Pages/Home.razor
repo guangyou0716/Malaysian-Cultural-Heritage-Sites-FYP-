@@ -1,0 +1,185 @@
+﻿@page "/"
+@inject NavigationManager Navigation
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@implements IDisposable
+
+<div class="home-container fade-in">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1 class="hero-title">
+                    Discover Penang's
+                    <span class="highlight">Cultural Heritage</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Explore the rich history, vibrant traditions, and architectural wonders of Malaysia's Pearl of the Orient
+                </p>
+                <div class="hero-actions">
+                    @if (AuthService == null || !AuthService.IsLoggedIn)
+                    {
+                    <button class="btn btn-primary btn-lg" @onclick="@(() => Navigation.NavigateTo("/login"))">
+                        <span class="btn-icon">🚀</span>
+                        Get Started
+                    </button>
+                    <button class="btn btn-outline btn-lg" @onclick="@(() => Navigation.NavigateTo("/signup"))">
+                        <span class="btn-icon">📝</span>
+                        Sign Up
+                    </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-primary btn-lg" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">
+                            <span class="btn-icon">📊</span>
+                            Go to Dashboard
+                        </button>
+                        <button class="btn btn-outline btn-lg" @onclick="@(() => Navigation.NavigateTo("/map"))">
+                            <span class="btn-icon">🗺️</span>
+                            Explore Map
+                        </button>
+                    }
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="cultural-pattern"></div>
+                <div class="floating-elements">
+                    <div class="floating-icon" style="--delay: 0s">🏛️</div>
+                    <div class="floating-icon" style="--delay: 1s">🕌</div>
+                    <div class="floating-icon" style="--delay: 2s">🏮</div>
+                    <div class="floating-icon" style="--delay: 3s">🎭</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="section-header">
+            <h2 class="section-title">Why Choose PenangGo?</h2>
+            <p class="section-subtitle">Experience cultural heritage like never before</p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card clickable" @onclick="@(() => Navigation.NavigateTo("/map"))">
+                <div class="feature-icon">🗺️</div>
+                <h3 class="feature-title">Interactive Maps</h3>
+                <p class="feature-description">
+                    Navigate through heritage sites with our detailed interactive maps and location services
+                </p>
+            </div>
+            
+            <div class="feature-card clickable" @onclick="@(() => Navigation.NavigateTo("/events"))">
+                <div class="feature-icon">🎉</div>
+                <h3 class="feature-title">Cultural Events</h3>
+                <p class="feature-description">
+                    Stay updated with local cultural events, festivals, and guided tours
+                </p>
+            </div>
+            
+            <div class="feature-card clickable" @onclick="@(() => Navigation.NavigateTo("/mybookmarks"))">
+                <div class="feature-icon">🔖</div>
+                <h3 class="feature-title">Personal Collections</h3>
+                <p class="feature-description">
+                    Bookmark your favorite sites and create your personal cultural journey
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cultural Highlights Section -->
+    <section class="highlights-section">
+        <div class="section-header">
+            <h2 class="section-title">Cultural Highlights</h2>
+            <p class="section-subtitle">Explore the diverse cultural tapestry of Penang</p>
+        </div>
+        
+        <div class="highlights-grid">
+            <div class="highlight-card clickable" @onclick="@(() => Navigation.NavigateTo("/map"))">
+                <div class="highlight-image" style="background-image: linear-gradient(135deg, #D4AF37, #8B0000)">
+                    <div class="highlight-icon">🏛️</div>
+                </div>
+                <div class="highlight-content">
+                    <h3>Chinese Heritage</h3>
+                    <p>Discover the rich Chinese cultural heritage through clan houses, temples, and traditional architecture</p>
+                </div>
+            </div>
+            
+            <div class="highlight-card clickable" @onclick="@(() => Navigation.NavigateTo("/map"))">
+                <div class="highlight-image" style="background-image: linear-gradient(135deg, #228B22, #006400)">
+                    <div class="highlight-icon">🕌</div>
+                </div>
+                <div class="highlight-content">
+                    <h3>Islamic Architecture</h3>
+                    <p>Explore beautiful mosques and Islamic architectural marvels that showcase religious diversity</p>
+                </div>
+            </div>
+            
+            <div class="highlight-card clickable" @onclick="@(() => Navigation.NavigateTo("/map"))">
+                <div class="highlight-image" style="background-image: linear-gradient(135deg, #FF6B35, #F7931E)">
+                    <div class="highlight-icon">🏮</div>
+                </div>
+                <div class="highlight-content">
+                    <h3>Peranakan Culture</h3>
+                    <p>Experience the unique Peranakan (Straits Chinese) culture through museums and heritage sites</p>
+                </div>
+            </div>
+            
+            <div class="highlight-card clickable" @onclick="@(() => Navigation.NavigateTo("/map"))">
+                <div class="highlight-image" style="background-image: linear-gradient(135deg, #9B59B6, #8E44AD)">
+                    <div class="highlight-icon">🎭</div>
+                </div>
+                <div class="highlight-content">
+                    <h3>Festivals & Traditions</h3>
+                    <p>Immerse yourself in vibrant festivals, traditional ceremonies, and cultural celebrations</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action Section -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2 class="cta-title">Ready to Explore?</h2>
+            <p class="cta-subtitle">
+                Join thousands of cultural enthusiasts discovering Penang's heritage
+            </p>
+            @if (AuthService == null || !AuthService.IsLoggedIn)
+            {
+            <button class="btn btn-primary btn-xl" @onclick="@(() => Navigation.NavigateTo("/signup"))">
+                <span class="btn-icon">🌟</span>
+                Start Your Journey
+            </button>
+            }
+            else
+            {
+                <button class="btn btn-primary btn-xl" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">
+                    <span class="btn-icon">🌟</span>
+                    Continue Exploring
+                </button>
+            }
+        </div>
+    </section>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (AuthService != null)
+        {
+            AuthService.AuthStateChanged += OnAuthStateChanged;
+        }
+    }
+
+    private void OnAuthStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        if (AuthService != null)
+        {
+            AuthService.AuthStateChanged -= OnAuthStateChanged;
+        }
+    }
+}

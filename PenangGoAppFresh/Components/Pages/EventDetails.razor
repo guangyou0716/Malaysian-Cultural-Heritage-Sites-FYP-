@@ -1,0 +1,160 @@
+@page "/event/{id:int}"
+@inject PenangGoAppFresh.Services.EventService EventService
+@inject NavigationManager Navigation
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject PenangGoAppFresh.Services.BookingService BookingService
+
+<div class="site-details-container fade-in">
+    @if (eventData == null)
+    {
+        <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Loading event details...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Hero Section -->
+        <div class="site-hero">
+            <div class="hero-image" style="background:@(eventData.Gradient ?? "linear-gradient(135deg, #D4AF37, #8B0000)");">
+                <div class="hero-overlay">
+                    <div class="hero-content">
+                        <h1 class="site-title">@eventData.Title</h1>
+                        <div class="site-location">
+                            <span class="location-icon">@eventData.Icon</span>
+                            @eventData.Location
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="site-content">
+            <div class="content-grid">
+                <!-- Event Information -->
+                <div class="site-info-card">
+                    <div class="card-header">
+                        <div class="card-icon">@eventData.Icon</div>
+                        <h3 class="card-title">About This Event</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="site-description">@eventData.Description</p>
+                        <div class="site-actions">
+                            <button class="btn btn-primary" @onclick="BookEvent" disabled="@isBooked">
+                                <span class="btn-icon">🎫</span>
+                                @(isBooked ? "Booked" : "Book Now")
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="stats-card">
+                    <div class="card-header">
+                        <div class="card-icon">📊</div>
+                        <h3 class="card-title">Event Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-icon">📅</div>
+                                <div class="stat-content">
+                                    <h4>@eventData.Date.ToString("MMM dd, yyyy")</h4>
+                                    <p>Date</p>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-icon">🕐</div>
+                                <div class="stat-content">
+                                    <h4>@eventData.Time</h4>
+                                    <p>Time</p>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-icon">💰</div>
+                                <div class="stat-content">
+                                    <h4>@eventData.Price</h4>
+                                    <p>Price</p>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-icon">🏷️</div>
+                                <div class="stat-content">
+                                    <h4>@eventData.Type</h4>
+                                    <p>Type</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+    private EventViewModel eventData;
+    private bool isBooked = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var dbEvent = await EventService.GetByIdAsync(id);
+        if (dbEvent != null)
+        {
+            eventData = new EventViewModel
+            {
+                Id = dbEvent.Id,
+                Title = dbEvent.Name,
+                Type = dbEvent.Type ?? "",
+                Icon = dbEvent.Icon ?? "🎉",
+                Date = dbEvent.StartTime,
+                Time = dbEvent.StartTime.ToString("hh:mm tt") + (dbEvent.EndTime != null ? $" - {dbEvent.EndTime:hh:mm tt}" : ""),
+                Location = dbEvent.Location,
+                Price = dbEvent.Price.HasValue ? $"RM {dbEvent.Price.Value:F2}" : "Free",
+                Description = dbEvent.Description,
+                Gradient = dbEvent.Gradient ?? "linear-gradient(135deg, #D4AF37, #8B0000)",
+                IsPopular = dbEvent.IsPopular,
+                IsNew = dbEvent.IsNew
+            };
+            if (AuthService.IsLoggedIn)
+            {
+                var userBookings = await BookingService.GetUserBookingsAsync(AuthService.CurrentUser.Id);
+                isBooked = userBookings.Any(b => b.EventId == dbEvent.Id);
+            }
+        }
+    }
+
+    private async void BookEvent()
+    {
+        if (!AuthService.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+        if (!isBooked)
+        {
+            await BookingService.BookEventAsync(AuthService.CurrentUser.Id, id);
+            isBooked = true;
+            StateHasChanged();
+        }
+    }
+
+    public class EventViewModel
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Type { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public DateTime Date { get; set; }
+        public string Time { get; set; } = "";
+        public string Location { get; set; } = "";
+        public string Price { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Gradient { get; set; } = "";
+        public bool IsPopular { get; set; }
+        public bool IsNew { get; set; }
+    }
+} 

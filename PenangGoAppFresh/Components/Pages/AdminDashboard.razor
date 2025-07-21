@@ -1,0 +1,285 @@
+@page "/admindashboard"
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject PenangGoAppFresh.Services.IUserService UserService
+@inject PenangGoAppFresh.Services.HeritageSiteService HeritageSiteService
+@inject PenangGoAppFresh.Services.EventService EventService
+@inject PenangGoAppFresh.Services.PanoramaContentService PanoramaContentService
+@inject PenangGoAppFresh.Services.IReviewService ReviewService
+@inject PenangGoAppFresh.Services.IBookingService BookingService
+@inject PenangGoAppFresh.Services.NotificationService NotificationService
+
+<div class="admindash-bg p-4">
+<h2 class="mb-4 text-center heritage-title">Admin Dashboard</h2>
+@if (!AuthService.IsAdmin)
+{
+    <div class="heritage-alert heritage-alert-warning text-center mt-4">You do not have admin access.</div>
+}
+else if (isLoading)
+{
+    <div class="text-center mt-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading dashboard data...</p>
+    </div>
+}
+else
+{
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 mb-4">
+            <div class="col">
+                <div class="card shadow-sm dash-card">
+                    <div class="card-body text-center">
+                        <div class="dash-icon mb-2">👤</div>
+                        <h5 class="card-title">Total Users</h5>
+                        <div class="dash-stat">@totalUsers</div>
+                        <small class="text-muted">@activeUsers active</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm dash-card">
+                    <div class="card-body text-center">
+                        <div class="dash-icon mb-2">🏛️</div>
+                        <h5 class="card-title">Heritage Sites</h5>
+                        <div class="dash-stat">@totalSites</div>
+                        <small class="text-muted">@activeSites active</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm dash-card">
+                    <div class="card-body text-center">
+                        <div class="dash-icon mb-2">🎉</div>
+                        <h5 class="card-title">Events</h5>
+                        <div class="dash-stat">@totalEvents</div>
+                        <small class="text-muted">@upcomingEvents upcoming</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm dash-card">
+                    <div class="card-body text-center">
+                        <div class="dash-icon mb-2">🖼️</div>
+                        <h5 class="card-title">360 Panoramas</h5>
+                        <div class="dash-stat">@totalPanoramas</div>
+                        <small class="text-muted">@sitesWithPanoramas sites</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Statistics -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+            <div class="col">
+                <div class="card shadow-sm dash-card">
+                    <div class="card-body text-center">
+                        <div class="dash-icon mb-2">⭐</div>
+                        <h5 class="card-title">Reviews</h5>
+                        <div class="dash-stat">@totalReviews</div>
+                        <small class="text-muted">@averageRating.ToString("F1") avg rating</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm dash-card">
+                    <div class="card-body text-center">
+                        <div class="dash-icon mb-2">📅</div>
+                        <h5 class="card-title">Bookings</h5>
+                        <div class="dash-stat">@totalBookings</div>
+                        <small class="text-muted">@confirmedBookings confirmed</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm dash-card">
+                    <div class="card-body text-center">
+                        <div class="dash-icon mb-2">👑</div>
+                        <h5 class="card-title">Admins</h5>
+                        <div class="dash-stat">@totalAdmins</div>
+                        <small class="text-muted">@(totalAdmins > 0 ? "Active" : "None")</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center text-secondary mt-4">
+            <button class="btn btn-outline-primary" @onclick="RefreshData">
+                <span class="btn-icon">🔄</span>
+                Refresh Data
+            </button>
+        </div>
+    }
+    </div>
+
+@code {
+    private bool isLoading = true;
+    private int totalUsers = 0;
+    private int activeUsers = 0;
+    private int totalAdmins = 0;
+    private int totalSites = 0;
+    private int activeSites = 0;
+    private int totalEvents = 0;
+    private int upcomingEvents = 0;
+    private int totalPanoramas = 0;
+    private int sitesWithPanoramas = 0;
+    private int totalReviews = 0;
+    private double averageRating = 0;
+    private int totalBookings = 0;
+    private int confirmedBookings = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.IsAdmin)
+        {
+            await LoadDashboardData();
+        }
+    }
+
+    private async Task LoadDashboardData()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Load data sequentially to avoid DbContext threading issues
+            await LoadUserData();
+            await LoadSiteData();
+            await LoadEventData();
+            await LoadPanoramaData();
+            await LoadReviewData();
+            await LoadBookingData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to load dashboard data: " + ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadUserData()
+    {
+        try
+        {
+            var users = await UserService.GetAllUsersAsync();
+            totalUsers = users.Count;
+            activeUsers = users.Count(u => u.IsActive);
+            totalAdmins = users.Count(u => u.IsAdmin);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to load user data: " + ex.Message);
+        }
+    }
+
+    private async Task LoadSiteData()
+    {
+        try
+        {
+            var sites = await HeritageSiteService.GetAllAsync();
+            totalSites = sites.Count;
+            activeSites = sites.Count(s => s.IsActive);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to load site data: " + ex.Message);
+        }
+    }
+
+    private async Task LoadEventData()
+    {
+        try
+        {
+            var events = await EventService.GetAllAsync();
+            totalEvents = events.Count;
+            upcomingEvents = events.Count(e => e.StartTime > DateTime.Now);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to load event data: " + ex.Message);
+        }
+    }
+
+    private async Task LoadPanoramaData()
+    {
+        try
+        {
+            var panoramas = await PanoramaContentService.GetAllAsync();
+            totalPanoramas = panoramas.Count;
+            sitesWithPanoramas = panoramas.Select(p => p.HeritageSiteId).Distinct().Count();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to load panorama data: " + ex.Message);
+        }
+    }
+
+    private async Task LoadReviewData()
+    {
+        try
+        {
+            var reviews = await ReviewService.GetAllReviewsAsync();
+            totalReviews = reviews?.Count ?? 0;
+            averageRating = reviews?.Any() == true ? reviews.Average(r => r.Rating) : 0.0;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to load review data: " + ex.Message);
+            totalReviews = 0;
+            averageRating = 0.0;
+        }
+    }
+
+    private async Task LoadBookingData()
+    {
+        try
+        {
+            var bookings = await BookingService.GetAllBookingsAsync();
+            totalBookings = bookings?.Count ?? 0;
+            confirmedBookings = bookings?.Count(b => b.Status == BookingStatus.Confirmed) ?? 0;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to load booking data: " + ex.Message);
+            totalBookings = 0;
+            confirmedBookings = 0;
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadDashboardData();
+        NotificationService.RaiseNotification("Success", "Dashboard data refreshed successfully!");
+    }
+}
+
+<style>
+.admindash-bg {
+    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
+    min-height: 100vh;
+}
+.dash-card {
+    border-radius: 18px;
+    transition: box-shadow 0.2s, transform 0.2s;
+    overflow: hidden;
+}
+.dash-card:hover {
+    box-shadow: 0 8px 32px rgba(80, 80, 180, 0.18);
+    transform: translateY(-4px) scale(1.03);
+}
+.dash-icon {
+    font-size: 2.5rem;
+}
+.dash-stat {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #4f8cff;
+}
+.btn-icon {
+    margin-right: 0.5rem;
+}
+</style> 

@@ -1,0 +1,444 @@
+@page "/adminsites"
+@inject PenangGoAppFresh.Services.HeritageSiteService HeritageSiteService
+@inject PenangGoAppFresh.Services.PanoramaContentService PanoramaContentService
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject PenangGoAppFresh.Services.NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+
+<div class="admin-sites-container fade-in">
+    <!-- Header Section -->
+    <div class="admin-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <span class="title-icon">🏛️</span>
+                Heritage Sites Management
+            </h1>
+            <p class="page-subtitle">Manage heritage sites, locations, and cultural information</p>
+        </div>
+    </div>
+
+    @if (AuthService == null || !AuthService.IsAdmin)
+    {
+        <div class="access-denied-section">
+            <div class="access-denied-card">
+                <div class="access-denied-icon">🚫</div>
+                <h3>Access Denied</h3>
+                <p>You do not have admin privileges to access this page</p>
+                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">
+                    <span class="btn-icon">🏠</span>
+                    Go to Dashboard
+                </button>
+            </div>
+        </div>
+    }
+    else if (sites == null)
+    {
+        <div class="loading-section">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <p>Loading heritage sites...</p>
+        </div>
+    }
+    else if (sites.Count == 0)
+    {
+        <div class="empty-state-section">
+            <div class="empty-state-card">
+                <div class="empty-icon">🏛️</div>
+                <h3>No Heritage Sites Found</h3>
+                <p>There are no heritage sites in the system yet.</p>
+                <button class="btn btn-primary" @onclick="ShowAddModal">
+                    <span class="btn-icon">➕</span>
+                    Add First Site
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="sites-content">
+            <!-- Statistics Section -->
+            <div class="sites-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">🏛️</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@sites.Count</span>
+                        <span class="stat-label">Total Sites</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@sites.Count(s => s.IsActive)</span>
+                        <span class="stat-label">Active Sites</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🖼️</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@sites.Count(s => s.HasPanoramaContent)</span>
+                        <span class="stat-label">With Panoramas</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@sites.Average(s => s.AverageRating).ToString("F1")</span>
+                        <span class="stat-label">Avg Rating</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="action-bar">
+                <div class="search-section">
+                    <input type="text" class="form-control" placeholder="Search sites..." @bind="searchTerm" />
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-outline" @onclick="ClearSearch">
+                        <span class="btn-icon">🔄</span>
+                        Clear
+                    </button>
+                    <button class="btn btn-primary" @onclick="ShowAddModal">
+                        <span class="btn-icon">➕</span>
+                        Add New Site
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sites Grid -->
+            <div class="sites-grid">
+                @foreach (var site in filteredSites)
+                {
+                    <div class="site-card fade-in">
+                        <div class="site-header">
+                            <div class="site-status-badges">
+                                @if (site.IsActive)
+                                {
+                                    <span class="status-badge status-active">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-inactive">Inactive</span>
+                                }
+                            </div>
+                            <div class="site-id">#@site.Id</div>
+                        </div>
+                        
+                        <div class="site-body">
+                            <div class="site-info">
+                                <h3 class="site-title">@site.Name</h3>
+                                <div class="site-location">
+                                    <span class="location-icon">📍</span>
+                                    <span class="location-text">@site.Location</span>
+                                </div>
+                                <div class="site-description">
+                                    @(site.Description.Length > 150 ? site.Description.Substring(0, 150) + "..." : site.Description)
+                                </div>
+                                <div class="site-details">
+                                    <div class="detail-item">
+                                        <span class="detail-icon">📅</span>
+                                        <span class="detail-text">Created: @site.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(site.Category))
+                                    {
+                                        <div class="detail-item">
+                                            <span class="detail-icon">🏷️</span>
+                                            <span class="detail-text">@site.Category</span>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(site.HistoricalPeriod))
+                                    {
+                                        <div class="detail-item">
+                                            <span class="detail-icon">⏰</span>
+                                            <span class="detail-text">@site.HistoricalPeriod</span>
+                                        </div>
+                                    }
+                                    <div class="detail-item">
+                                        <span class="detail-icon">⭐</span>
+                                        <span class="detail-text">@site.AverageRating.ToString("F1") stars (@site.TotalReviews reviews)</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="site-actions">
+                                <button class="btn btn-sm btn-warning" @onclick="@(() => EditSite(site))" @onclick:stopPropagation="true">
+                                    <span class="btn-icon">✏️</span>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger" @onclick="@(() => DeleteSite(site))" @onclick:stopPropagation="true">
+                                    <span class="btn-icon">🗑️</span>
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Add/Edit Site Modal -->
+@if (showModal)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@(isEditing ? "Edit Site: " + selectedSite?.Name : "Add New Heritage Site")</h3>
+                <button class="modal-close" @onclick="CloseModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Name *:</label>
+                    <input type="text" class="form-control" @bind="editSite.Name" placeholder="Enter site name" />
+                </div>
+                <div class="form-group">
+                    <label>Description *:</label>
+                    <textarea class="form-control" @bind="editSite.Description" rows="3" placeholder="Enter site description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Location *:</label>
+                    <input type="text" class="form-control" @bind="editSite.Location" placeholder="Enter site location" />
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Latitude:</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="editSite.Latitude" placeholder="0.000000" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Longitude:</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="editSite.Longitude" placeholder="0.000000" />
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Category:</label>
+                    <input type="text" class="form-control" @bind="editSite.Category" placeholder="e.g., Temple, Mosque, Mansion" />
+                </div>
+                <div class="form-group">
+                    <label>Historical Period:</label>
+                    <input type="text" class="form-control" @bind="editSite.HistoricalPeriod" placeholder="e.g., 19th Century, Colonial Era" />
+                </div>
+                <div class="form-group">
+                    <label>Image URL:</label>
+                    <input type="url" class="form-control" @bind="editSite.ImageUrl" placeholder="https://example.com/image.jpg" />
+                </div>
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select class="form-control" @bind="editSite.IsActive">
+                        <option value="@true">Active</option>
+                        <option value="@false">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                <button class="btn btn-primary" @onclick="SaveSite" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="btn-icon">⏳</span>
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span class="btn-icon">💾</span>
+                        <span>@(isEditing ? "Update Site" : "Add Site")</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<PenangGoApp.DataAccess.HeritageSite> sites;
+    private string searchTerm = "";
+    private bool showModal = false;
+    private bool isEditing = false;
+    private bool isSaving = false;
+    private PenangGoApp.DataAccess.HeritageSite? selectedSite;
+    private PenangGoApp.DataAccess.HeritageSite editSite = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService != null && AuthService.IsAdmin)
+        {
+            await LoadSites();
+        }
+    }
+
+    private async Task LoadSites()
+    {
+        try
+        {
+            sites = await HeritageSiteService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to load sites: " + ex.Message);
+            sites = new List<PenangGoApp.DataAccess.HeritageSite>();
+        }
+    }
+
+    private IEnumerable<PenangGoApp.DataAccess.HeritageSite> filteredSites
+    {
+        get
+        {
+            var filtered = sites.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                filtered = filtered.Where(s => 
+                    s.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    s.Location.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    s.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (s.Category?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true));
+            }
+
+            return filtered.OrderBy(s => s.Name);
+        }
+    }
+
+    private void ShowAddModal()
+    {
+        isEditing = false;
+        selectedSite = null;
+        editSite = new PenangGoApp.DataAccess.HeritageSite
+        {
+            IsActive = true,
+            CreatedAt = DateTime.Now
+        };
+        showModal = true;
+    }
+
+    private void EditSite(PenangGoApp.DataAccess.HeritageSite site)
+    {
+        isEditing = true;
+        selectedSite = site;
+        editSite = new PenangGoApp.DataAccess.HeritageSite
+        {
+            Id = site.Id,
+            Name = site.Name,
+            Description = site.Description,
+            Location = site.Location,
+            Latitude = site.Latitude,
+            Longitude = site.Longitude,
+            Category = site.Category,
+            HistoricalPeriod = site.HistoricalPeriod,
+            ImageUrl = site.ImageUrl,
+            IsActive = site.IsActive,
+            CreatedAt = site.CreatedAt
+        };
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        selectedSite = null;
+        editSite = new();
+    }
+
+    private async Task SaveSite()
+    {
+        if (string.IsNullOrWhiteSpace(editSite.Name) || 
+            string.IsNullOrWhiteSpace(editSite.Description) || 
+            string.IsNullOrWhiteSpace(editSite.Location))
+        {
+            NotificationService.RaiseNotification("Error", "Please fill in all required fields (Name, Description, Location)");
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            if (isEditing)
+            {
+                // Update existing site
+                await HeritageSiteService.UpdateAsync(editSite);
+                var originalSite = sites.FirstOrDefault(s => s.Id == selectedSite!.Id);
+                if (originalSite != null)
+                {
+                    originalSite.Name = editSite.Name;
+                    originalSite.Description = editSite.Description;
+                    originalSite.Location = editSite.Location;
+                    originalSite.Latitude = editSite.Latitude;
+                    originalSite.Longitude = editSite.Longitude;
+                    originalSite.Category = editSite.Category;
+                    originalSite.HistoricalPeriod = editSite.HistoricalPeriod;
+                    originalSite.ImageUrl = editSite.ImageUrl;
+                    originalSite.IsActive = editSite.IsActive;
+                    originalSite.UpdatedAt = DateTime.Now;
+                }
+                NotificationService.RaiseNotification("Success", $"Site '{editSite.Name}' updated successfully");
+                // Reload sites to reflect latest status
+                await LoadSites();
+            }
+            else
+            {
+                // Add new site
+                editSite.CreatedAt = DateTime.Now;
+                await HeritageSiteService.AddAsync(editSite);
+                sites.Add(editSite);
+                NotificationService.RaiseNotification("Success", $"Site '{editSite.Name}' added successfully");
+                await LoadSites();
+            }
+
+            CloseModal();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", $"Failed to save site: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteSite(PenangGoApp.DataAccess.HeritageSite site)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to delete '{site.Name}'?\n\n" +
+            $"Location: {site.Location}\n" +
+            $"This action cannot be undone.");
+
+        if (!confirmed)
+            return;
+
+        // Optimistically remove from UI
+        var originalSites = sites.ToList();
+        sites.Remove(site);
+        StateHasChanged();
+
+        try
+        {
+            await HeritageSiteService.DeleteAsync(site.Id);
+            NotificationService.RaiseNotification("Success", $"Site '{site.Name}' deleted successfully");
+        }
+        catch (Exception ex)
+        {
+            // Revert on error
+            sites = originalSites;
+            StateHasChanged();
+            NotificationService.RaiseNotification("Error", $"Failed to delete site: {ex.Message}");
+        }
+    }
+
+    private void ViewSiteDetails(PenangGoApp.DataAccess.HeritageSite site)
+    {
+        NotificationService.RaiseNotification("Info", $"Viewing details for {site.Name}");
+        // Navigate to site details page or show detailed modal
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = "";
+    }
+} 

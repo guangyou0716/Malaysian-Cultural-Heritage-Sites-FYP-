@@ -1,0 +1,26 @@
+@page "/logout"
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject NavigationManager Navigation
+@inject PenangGoAppFresh.Services.NotificationService NotificationService
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService != null && AuthService.IsLoggedIn)
+        {
+            // Perform logout
+            await AuthService.LogoutAsync();
+            
+            // Show logout notification
+            NotificationService.RaiseNotification("Logged Out", "You have been successfully logged out.");
+            
+            // Redirect to home page
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            // If not logged in, just redirect to home
+            Navigation.NavigateTo("/");
+        }
+    }
+} 

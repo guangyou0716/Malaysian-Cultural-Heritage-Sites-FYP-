@@ -1,0 +1,74 @@
+@page "/mybookmarks"
+@inject PenangGoAppFresh.Services.BookmarkService BookmarkService
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="bookmarks-bg p-4">
+    <h2 class="mb-4 text-center heritage-title">My Bookmarked Sites</h2>
+    @if (AuthService == null || !AuthService.IsLoggedIn)
+    {
+        <div class="heritage-alert heritage-alert-warning text-center mt-4">Please log in to view your bookmarks.</div>
+    }
+    else if (bookmarks == null)
+    {
+        <div class="heritage-alert heritage-alert-info text-center mt-4">Loading bookmarks...</div>
+    }
+    else if (bookmarks.Count == 0)
+    {
+        <div class="heritage-alert heritage-alert-info text-center mt-4">You have no bookmarks yet. Start exploring and bookmark your favorite sites!</div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            @foreach (var bookmark in bookmarks)
+            {
+                <div class="col">
+                    <div class="card shadow-sm h-100 bookmark-card clickable" @onclick="@(() => Navigation.NavigateTo($"/site/{bookmark.SiteId}"))">
+                        @if (!string.IsNullOrEmpty(bookmark.Site.ImageUrl))
+                        {
+                            <img src="@bookmark.Site.ImageUrl" class="card-img-top bookmark-img" alt="@bookmark.Site.Name" />
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@bookmark.Site.Name</h5>
+                            <div class="mb-2 text-secondary"><span class="heritage-icon">📍</span> @bookmark.Site.Location</div>
+                            <p class="card-text">@bookmark.Site.Description</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+.bookmarks-bg {
+    background: linear-gradient(120deg, #f8fafc 60%, #ffe0e0 100%);
+    min-height: 100vh;
+}
+.bookmark-card {
+    border-radius: 18px;
+    transition: box-shadow 0.2s, transform 0.2s;
+    overflow: hidden;
+}
+.bookmark-card:hover {
+    box-shadow: 0 8px 32px rgba(255, 80, 80, 0.18);
+    transform: translateY(-4px) scale(1.03);
+}
+.bookmark-img {
+    height: 180px;
+    object-fit: cover;
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+}
+</style>
+
+@code {
+    private List<PenangGoApp.DataAccess.Bookmark> bookmarks;
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService != null && AuthService.IsLoggedIn && AuthService.CurrentUser != null)
+        {
+            bookmarks = await BookmarkService.GetUserBookmarksAsync(AuthService.CurrentUser.Id);
+        }
+    }
+} 

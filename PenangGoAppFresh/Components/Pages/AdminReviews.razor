@@ -1,0 +1,285 @@
+@page "/adminreviews"
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject PenangGoAppFresh.Services.IReviewService ReviewService
+@inject PenangGoAppFresh.Services.NotificationService NotificationService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="admin-reviews-container fade-in">
+    <!-- Header Section -->
+    <div class="admin-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <span class="title-icon">⭐</span>
+                Review Management
+            </h1>
+            <p class="page-subtitle">Manage user reviews and ratings for heritage sites</p>
+        </div>
+    </div>
+
+    @if (!AuthService.IsAdmin)
+    {
+        <div class="access-denied-section">
+            <div class="access-denied-card">
+                <div class="access-denied-icon">🚫</div>
+                <h3>Access Denied</h3>
+                <p>You do not have admin privileges to access this page</p>
+                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">
+                    <span class="btn-icon">🏠</span>
+                    Go to Dashboard
+                </button>
+            </div>
+        </div>
+    }
+    else if (reviews == null)
+    {
+        <div class="loading-section">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <p>Loading reviews...</p>
+        </div>
+    }
+    else if (reviews.Count == 0)
+    {
+        <div class="empty-state-section">
+            <div class="empty-state-card">
+                <div class="empty-icon">⭐</div>
+                <h3>No Reviews Found</h3>
+                <p>There are no reviews in the system yet.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="reviews-content">
+            <!-- Statistics Section -->
+            <div class="reviews-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@reviews.Count</span>
+                        <span class="stat-label">Total Reviews</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@reviews.Average(r => r.Rating).ToString("F1")</span>
+                        <span class="stat-label">Average Rating</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏛️</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@reviews.Select(r => r.SiteId).Distinct().Count()</span>
+                        <span class="stat-label">Sites Reviewed</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@reviews.Select(r => r.UserId).Distinct().Count()</span>
+                        <span class="stat-label">Unique Users</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-controls">
+                    <select class="form-control" @bind="ratingFilter">
+                        <option value="0">All Ratings</option>
+                        <option value="5">5 Stars</option>
+                        <option value="4">4 Stars</option>
+                        <option value="3">3 Stars</option>
+                        <option value="2">2 Stars</option>
+                        <option value="1">1 Star</option>
+                    </select>
+                    <input type="text" class="form-control" placeholder="Search by user or site..." @bind="searchTerm" />
+                    <button class="btn btn-outline" @onclick="ClearFilters">
+                        <span class="btn-icon">🔄</span>
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Reviews Grid -->
+            <div class="reviews-grid">
+                @foreach (var review in filteredReviews)
+                {
+                    <div class="review-card fade-in">
+                        <div class="review-header">
+                            <div class="rating-display">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <span class="star @(i <= review.Rating ? "filled" : "empty")">⭐</span>
+                                }
+                            </div>
+                            <div class="review-id">#@review.Id</div>
+                        </div>
+                        
+                        <div class="review-body">
+                            <div class="review-info">
+                                <h3 class="site-title">@(review.Site?.Name ?? "Unknown Site")</h3>
+                                <div class="user-info">
+                                    <span class="user-icon">👤</span>
+                                    <span class="user-name">@(review.User?.Name ?? "Anonymous")</span>
+                                </div>
+                                <div class="review-content">
+                                    <p class="review-text">@review.Comment</p>
+                                </div>
+                                <div class="review-details">
+                                    <div class="detail-item">
+                                        <span class="detail-icon">📅</span>
+                                        <span class="detail-text">Posted: @review.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-icon">🏛️</span>
+                                        <span class="detail-text">@(review.Site?.Name ?? "Unknown Site")</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-icon">📍</span>
+                                        <span class="detail-text">@(review.Site?.Location ?? "Location TBD")</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="review-actions">
+                                <button class="btn btn-sm btn-danger" 
+                                        @onclick="@(() => DeleteReview(review))" 
+                                        @onclick:stopPropagation="true"
+                                        disabled="@deletingReviewIds.Contains(review.Id)">
+                                    @if (deletingReviewIds.Contains(review.Id))
+                                    {
+                                        <span class="btn-icon">⏳</span>
+                                        <span>Deleting...</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="btn-icon">🗑️</span>
+                                        <span>Delete</span>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<PenangGoApp.DataAccess.Review> reviews;
+    private int ratingFilter = 0;
+    private string searchTerm = "";
+    private HashSet<int> deletingReviewIds = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.IsAdmin)
+        {
+            try
+            {
+                reviews = await ReviewService.GetAllReviewsAsync();
+            }
+            catch (Exception ex)
+            {
+                NotificationService.RaiseNotification("Error", "Failed to load reviews: " + ex.Message);
+                reviews = new List<PenangGoApp.DataAccess.Review>();
+            }
+        }
+    }
+
+    private IEnumerable<PenangGoApp.DataAccess.Review> filteredReviews
+    {
+        get
+        {
+            var filtered = reviews.AsEnumerable();
+
+            if (ratingFilter > 0)
+            {
+                filtered = filtered.Where(r => r.Rating == ratingFilter);
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                filtered = filtered.Where(r => 
+                    (r.User?.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (r.Site?.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (r.Comment?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true));
+            }
+
+            return filtered.OrderByDescending(r => r.CreatedAt);
+        }
+    }
+
+    private async Task DeleteReview(PenangGoApp.DataAccess.Review review)
+    {
+        // Show confirmation dialog
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to delete this review?\n\n" +
+            $"Site: {review.Site?.Name ?? "Unknown"}\n" +
+            $"User: {review.User?.Name ?? "Anonymous"}\n" +
+            $"Rating: {review.Rating} stars\n" +
+            $"Comment: {review.Comment?.Substring(0, Math.Min(50, review.Comment.Length))}...\n\n" +
+            "This action cannot be undone.");
+
+        if (!confirmed)
+            return;
+
+        // Set loading state
+        deletingReviewIds.Add(review.Id);
+        StateHasChanged();
+
+        // Show loading notification
+        NotificationService.RaiseNotification("Info", "Deleting review...");
+
+        // Optimistically remove from UI
+        var originalReviews = reviews.ToList();
+        reviews.Remove(review);
+        StateHasChanged();
+
+        try
+        {
+            var success = await ReviewService.DeleteReviewAsync(review.Id);
+            if (success)
+            {
+                NotificationService.RaiseNotification("Success", 
+                    $"Review #{review.Id} from {review.User?.Name ?? "Anonymous"} for {review.Site?.Name ?? "Unknown Site"} has been permanently deleted.");
+                
+                // Update statistics
+                StateHasChanged();
+            }
+            else
+            {
+                // Revert on failure
+                reviews = originalReviews;
+                StateHasChanged();
+                NotificationService.RaiseNotification("Error", 
+                    $"Failed to delete review #{review.Id}. The review may have already been deleted or you don't have permission.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Revert on error
+            reviews = originalReviews;
+            StateHasChanged();
+            NotificationService.RaiseNotification("Error", 
+                $"Failed to delete review #{review.Id}: {ex.Message}\n\nPlease try again or contact support if the problem persists.");
+        }
+        finally
+        {
+            // Clear loading state
+            deletingReviewIds.Remove(review.Id);
+            StateHasChanged();
+        }
+    }
+
+    private void ClearFilters()
+    {
+        ratingFilter = 0;
+        searchTerm = "";
+    }
+} 

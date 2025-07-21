@@ -1,0 +1,80 @@
+@page "/info"
+@inject PenangGoAppFresh.Services.HeritageSiteService HeritageSiteService
+@inject NavigationManager Navigation
+
+<div class="info-bg p-4">
+    <h2 class="mb-4 text-center heritage-title">Explore Penang Heritage Sites</h2>
+    @if (sites == null)
+    {
+        <div class="heritage-alert heritage-alert-info text-center mt-4">Loading heritage sites...</div>
+    }
+    else if (sites.Count == 0)
+    {
+        <div class="heritage-alert heritage-alert-info text-center mt-4">No heritage sites found.</div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            @foreach (var site in sites)
+            {
+                <div class="col">
+                    <div class="card shadow-sm h-100 site-card">
+                        @if (!string.IsNullOrEmpty(site.ImageUrl))
+                        {
+                            <img src="@site.ImageUrl" class="card-img-top site-img" alt="@site.Name" />
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@site.Name</h5>
+                            <div class="mb-2 text-secondary"><span class="heritage-icon">📍</span> @site.Location</div>
+                            <p class="card-text">@site.Description</p>
+                            <button class="btn btn-gradient mt-2 w-100" @onclick='() => Navigation.NavigateTo($"/site/{site.Id}")'>View Details</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+.info-bg {
+    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
+    min-height: 100vh;
+}
+.site-card {
+    border-radius: 18px;
+    transition: box-shadow 0.2s, transform 0.2s;
+    overflow: hidden;
+}
+.site-card:hover {
+    box-shadow: 0 8px 32px rgba(80, 80, 180, 0.18);
+    transform: translateY(-4px) scale(1.03);
+}
+.site-img {
+    height: 180px;
+    object-fit: cover;
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+}
+.btn-gradient {
+    background: linear-gradient(90deg, #4f8cff 0%, #6f6fff 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(80, 80, 180, 0.10);
+    transition: background 0.2s, box-shadow 0.2s;
+}
+.btn-gradient:hover {
+    background: linear-gradient(90deg, #6f6fff 0%, #4f8cff 100%);
+    box-shadow: 0 4px 16px rgba(80, 80, 180, 0.18);
+}
+</style>
+
+@code {
+    private List<PenangGoApp.DataAccess.HeritageSite> sites;
+    protected override async Task OnInitializedAsync()
+    {
+        sites = await HeritageSiteService.GetAllAsync();
+    }
+} 

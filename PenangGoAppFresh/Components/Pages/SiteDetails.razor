@@ -1,0 +1,387 @@
+@page "/site/{id:int}"
+@inject PenangGoAppFresh.Services.HeritageSiteService HeritageSiteService
+@inject PenangGoAppFresh.Services.PanoramaContentService PanoramaContentService
+@inject NavigationManager Navigation
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject IJSRuntime JSRuntime
+
+<div class="site-details-container fade-in">
+@if (site == null)
+{
+        <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Loading site details...</p>
+        </div>
+}
+else
+{
+        <!-- Hero Section -->
+        <div class="site-hero">
+        @if (!string.IsNullOrEmpty(site.ImageUrl))
+        {
+                <div class="hero-image" style="background-image:url('@site.ImageUrl');">
+                    <div class="hero-overlay">
+                        <div class="hero-content">
+                            <h1 class="site-title">@site.Name</h1>
+                            <div class="site-location">
+                                <span class="location-icon">📍</span>
+                                @site.Location
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="hero-image-placeholder">
+                    <div class="hero-content">
+                        <h1 class="site-title">@site.Name</h1>
+                        <div class="site-location">
+                            <span class="location-icon">📍</span>
+                            @site.Location
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Main Content -->
+        <div class="site-content">
+            <div class="content-grid">
+                <!-- Site Information -->
+                <div class="site-info-card">
+                    <div class="card-header">
+                        <div class="card-icon">🏛️</div>
+                        <h3 class="card-title">About This Site</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="site-description">@site.Description</p>
+                        <div class="site-details-grid">
+                            <div class="detail-row"><span class="detail-label">Visiting Hours:</span> <span class="detail-value">@site.VisitingHours</span></div>
+                            <div class="detail-row"><span class="detail-label">Entry Fee:</span> <span class="detail-value">@site.EntryFee</span></div>
+                            <div class="detail-row"><span class="detail-label">Contact Info:</span> <span class="detail-value">@site.ContactInfo</span></div>
+                            <div class="detail-row"><span class="detail-label">Website:</span> <span class="detail-value">@if (!string.IsNullOrWhiteSpace(site.Website)) { <button class="btn btn-link" @onclick="() => OpenInNewTab(site.Website)">@site.Website</button> } else { <span>-</span> }</span></div>
+                        </div>
+                        <div class="site-actions">
+                            <button class="btn btn-primary" disabled>
+                                <span class="btn-icon">🎫</span>
+                                Book Ticket (Coming Soon)
+                            </button>
+                            @if (panoramas != null && panoramas.Count > 0)
+                            {
+                                <button class="btn btn-secondary" @onclick="ShowPanorama">
+                                    <span class="btn-icon">📱</span>
+                                    View 360° Image
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="stats-card">
+                    <div class="card-header">
+                        <div class="card-icon">📊</div>
+                        <h3 class="card-title">Site Statistics</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-icon">⭐</div>
+                                <div class="stat-content">
+                                    <h4>@(reviews?.Count ?? 0)</h4>
+                                    <p>Reviews</p>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-icon">📅</div>
+                                <div class="stat-content">
+                                    <h4>@(siteEvents?.Count ?? 0)</h4>
+                                    <p>Events</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reviews Section -->
+            @if (reviews != null && reviews.Count > 0)
+            {
+                <div class="reviews-section">
+                    <div class="section-header">
+                        <h3 class="section-title">
+                            <span class="title-icon">⭐</span>
+                            Site Reviews (@reviews.Count)
+                        </h3>
+                    </div>
+                    <div class="reviews-grid">
+                        @foreach (var review in reviews)
+                        {
+                            <div class="review-card">
+                                <div class="review-header">
+                                    <div class="reviewer-info">
+                                        <div class="reviewer-avatar">@(review.User?.Name?.Substring(0, 1) ?? "U")</div>
+                                        <div class="reviewer-details">
+                                            <h4>@review.User?.Name</h4>
+                                            <div class="review-rating">
+                                                @for (int i = 1; i <= 5; i++)
+                                                {
+                                                    <span class="star @(i <= review.Rating ? "filled" : "")">★</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="review-date">@review.CreatedAt.ToString("MMM dd, yyyy")</div>
+                                </div>
+                                <div class="review-content">
+                                    <p>@review.Comment</p>
+                                </div>
+                                @if (AuthService != null && AuthService.IsLoggedIn && review.UserId == AuthService.CurrentUser?.Id)
+                                {
+                                    <div class="review-actions">
+                                        <button class="btn btn-sm btn-outline-warning" @onclick="() => StartEditReview(review)">
+                                            <span class="btn-icon">✏️</span> Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteReviewAsync(review.Id)">
+                                            <span class="btn-icon">🗑️</span> Delete
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                            @if (editingReview != null && editingReview.Id == review.Id)
+                            {
+                                <div class="edit-review-card">
+                                    <h4>Edit Review</h4>
+                                    <EditForm Model="editReviewInput" OnValidSubmit="UpdateReviewAsync">
+                                        <div class="form-group">
+                                            <label>Rating</label>
+                                            <div class="rating-input">
+                                                @for (int i = 1; i <= 5; i++)
+                                                {
+                                                    <span class="star-input @(i <= editReviewInput.Rating ? "filled" : "")" 
+                                                          @onclick="() => editReviewInput.Rating = i">★</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Comment</label>
+                                            <InputTextArea class="form-control" @bind-Value="editReviewInput.Comment" rows="3" />
+                                        </div>
+                                        <div class="form-actions">
+                                            <button class="btn btn-success" type="submit">
+                                                <span class="btn-icon">💾</span> Save
+                                            </button>
+                                            <button class="btn btn-secondary" type="button" @onclick="CancelEditReview">
+                                                <span class="btn-icon">❌</span> Cancel
+                                            </button>
+                                        </div>
+                                    </EditForm>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Events Section -->
+            @if (siteEvents != null && siteEvents.Count > 0)
+            {
+                <div class="events-section">
+                    <div class="section-header">
+                        <h3 class="section-title">
+                            <span class="title-icon">🎉</span>
+                            Upcoming Events (@siteEvents.Count)
+                        </h3>
+                    </div>
+                    <div class="events-grid">
+                        @foreach (var ev in siteEvents)
+                        {
+                            <div class="event-card">
+                                <div class="event-header">
+                                    <div class="event-icon">🎉</div>
+                                    <div class="event-info">
+                                        <h4>@ev.Name</h4>
+                                        <div class="event-date">
+                                            <span class="date-icon">📅</span>
+                                            @ev.StartTime.ToString("MMM dd, yyyy HH:mm")
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="event-description">
+                                    <p>@ev.Description</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Add Review Section -->
+            @if (AuthService != null && AuthService.IsLoggedIn && !hasUserReviewed)
+            {
+                <div class="add-review-section">
+                    <div class="section-header">
+                        <h3 class="section-title">
+                            <span class="title-icon">✍️</span>
+                            Add Your Review
+                        </h3>
+                    </div>
+                    <div class="review-form-card">
+                        <EditForm Model="newReview" OnValidSubmit="AddReviewAsync">
+                            <div class="form-group">
+                                <label>Rating</label>
+                                <div class="rating-input">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        <span class="star-input @(i <= newReview.Rating ? "filled" : "")" 
+                                              @onclick="() => newReview.Rating = i">★</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Comment</label>
+                                <InputTextArea class="form-control" @bind-Value="newReview.Comment" rows="4" placeholder="Share your experience at this heritage site..." />
+                            </div>
+                            <button class="btn btn-primary" type="submit">
+                                <span class="btn-icon">📝</span>
+                                Submit Review
+                            </button>
+                        </EditForm>
+                    </div>
+                </div>
+            }
+
+            <!-- Bookmark Section -->
+            @if (AuthService != null && AuthService.IsLoggedIn)
+            {
+                <div class="bookmark-section">
+                    @if (!isBookmarked)
+                    {
+                        <button class="btn btn-outline-primary bookmark-btn" @onclick="AddBookmarkAsync">
+                            <span class="btn-icon">🔖</span>
+                            Bookmark this Site
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-danger bookmark-btn" @onclick="RemoveBookmarkAsync">
+                            <span class="btn-icon">🗑️</span>
+                            Remove Bookmark
+                        </button>
+                    }
+                </div>
+            }
+    </div>
+}
+
+    <!-- Panorama Modal -->
+@if (showPanorama && panoramas != null && panoramas.Count > 0)
+{
+    <div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.7);">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">360 Panorama</h5>
+                    <button type="button" class="btn-close" @onclick="HidePanorama"></button>
+                </div>
+                <div class="modal-body" style="height:70vh;">
+                    <iframe src="@panoramas[0].PanoramaUrl" width="100%" height="100%" style="border:0;" allowfullscreen loading="lazy"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+        }
+    </div>
+@code {
+    [Parameter]
+    public int id { get; set; }
+    private PenangGoApp.DataAccess.HeritageSite site;
+    private List<PenangGoApp.DataAccess.PanoramaContent> panoramas;
+    private List<PenangGoApp.DataAccess.Review> reviews;
+    private List<PenangGoApp.DataAccess.Event> siteEvents;
+    private bool showPanorama = false;
+    private ReviewInput newReview = new ReviewInput();
+    private bool hasUserReviewed = false;
+    private bool isBookmarked = false;
+
+    public class ReviewInput { public int Rating { get; set; } = 5; public string Comment { get; set; } }
+    [Inject] PenangGoAppFresh.Services.ReviewService ReviewService { get; set; }
+    [Inject] PenangGoAppFresh.Services.EventService EventService { get; set; }
+    [Inject] PenangGoAppFresh.Services.BookmarkService BookmarkService { get; set; }
+
+    private ReviewInput editReviewInput = new ReviewInput();
+    private PenangGoApp.DataAccess.Review editingReview = null;
+    protected override async Task OnInitializedAsync()
+    {
+        site = await HeritageSiteService.GetByIdAsync(id);
+        panoramas = await PanoramaContentService.GetByHeritageSiteIdAsync(id);
+        reviews = await ReviewService.GetSiteReviewsAsync(id);
+        var allEvents = await EventService.GetAllAsync();
+        siteEvents = allEvents;
+        if (AuthService != null && AuthService.IsLoggedIn && reviews != null)
+        {
+            hasUserReviewed = reviews.Any(r => r.UserId == AuthService.CurrentUser?.Id);
+        }
+        if (AuthService != null && AuthService.IsLoggedIn)
+        {
+            var userBookmarks = await BookmarkService.GetUserBookmarksAsync(AuthService.CurrentUser.Id);
+            isBookmarked = userBookmarks.Any(b => b.SiteId == id);
+        }
+    }
+    private void ShowPanorama() => showPanorama = true;
+    private void HidePanorama() => showPanorama = false;
+    private async Task AddReviewAsync()
+    {
+        await ReviewService.AddReviewAsync(AuthService.CurrentUser?.Id ?? 0, id, newReview.Rating, newReview.Comment);
+        reviews = await ReviewService.GetSiteReviewsAsync(id);
+        hasUserReviewed = true;
+        newReview = new ReviewInput();
+        StateHasChanged();
+    }
+    private void StartEditReview(PenangGoApp.DataAccess.Review review)
+    {
+        editingReview = review;
+        editReviewInput = new ReviewInput { Rating = review.Rating, Comment = review.Comment };
+    }
+    private void CancelEditReview()
+    {
+        editingReview = null;
+        editReviewInput = new ReviewInput();
+    }
+    private async Task UpdateReviewAsync()
+    {
+        if (editingReview != null)
+        {
+            await ReviewService.UpdateReviewAsync(editingReview.Id, AuthService.CurrentUser?.Id ?? 0, editReviewInput.Rating, editReviewInput.Comment);
+            reviews = await ReviewService.GetSiteReviewsAsync(id);
+            editingReview = null;
+            editReviewInput = new ReviewInput();
+            StateHasChanged();
+        }
+    }
+    private async Task DeleteReviewAsync(int reviewId)
+    {
+        await ReviewService.DeleteReviewAsync(reviewId, AuthService.CurrentUser?.Id ?? 0);
+        reviews = await ReviewService.GetSiteReviewsAsync(id);
+        hasUserReviewed = false;
+        StateHasChanged();
+    }
+    private async Task AddBookmarkAsync()
+    {
+        await BookmarkService.AddBookmarkAsync(AuthService.CurrentUser?.Id ?? 0, id);
+        isBookmarked = true;
+        StateHasChanged();
+    }
+    private async Task RemoveBookmarkAsync()
+    {
+        await BookmarkService.RemoveBookmarkAsync(AuthService.CurrentUser?.Id ?? 0, id);
+        isBookmarked = false;
+        StateHasChanged();
+    }
+
+    private async Task OpenInNewTab(string url)
+    {
+        await JSRuntime.InvokeVoidAsync("window.open", url, "_blank");
+    }
+} 

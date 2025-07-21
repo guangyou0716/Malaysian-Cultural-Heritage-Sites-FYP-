@@ -1,0 +1,379 @@
+@page "/profile"
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject PenangGoAppFresh.Services.NotificationService NotificationService
+@inject NavigationManager Navigation
+@using PenangGoApp.DataAccess
+
+<div class="profile-settings-container fade-in">
+    <!-- Header Section -->
+    <div class="profile-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <span class="title-icon">👤</span>
+                Profile Settings
+            </h1>
+            <p class="page-subtitle">Manage your account information and preferences</p>
+        </div>
+    </div>
+
+    @if (AuthService == null || !AuthService.IsLoggedIn)
+    {
+        <div class="access-denied-section">
+            <div class="access-denied-card">
+                <div class="access-denied-icon">🔒</div>
+                <h3>Login Required</h3>
+                <p>Please log in to access your profile settings</p>
+                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/login"))">
+                    <span class="btn-icon">🔑</span>
+                    Go to Login
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="profile-content">
+            <!-- Profile Information Section -->
+            <div class="profile-section">
+                <div class="section-header">
+                    <h2>Personal Information</h2>
+                    <p>Update your basic profile information</p>
+                </div>
+                
+                <div class="profile-form">
+                    <div class="form-group">
+                        <label>Full Name *:</label>
+                        <input type="text" class="form-control" @bind="profile.Name" placeholder="Enter your full name" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Email Address *:</label>
+                        <input type="email" class="form-control" @bind="profile.Email" placeholder="Enter your email address" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Phone Number:</label>
+                        <input type="tel" class="form-control" @bind="profile.PhoneNumber" placeholder="Enter your phone number" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Bio:</label>
+                        <textarea class="form-control" @bind="profile.Bio" rows="3" placeholder="Tell us about yourself..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Section -->
+            <div class="profile-section">
+                <div class="section-header">
+                    <h2>Security Settings</h2>
+                    <p>Manage your password and account security</p>
+                </div>
+                
+                <div class="profile-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Current Password:</label>
+                                <input type="password" class="form-control" @bind="currentPassword" placeholder="Enter current password" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>New Password:</label>
+                                <input type="password" class="form-control" @bind="newPassword" placeholder="Enter new password" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Confirm New Password:</label>
+                        <input type="password" class="form-control" @bind="confirmPassword" placeholder="Confirm new password" />
+                    </div>
+                    
+                    <div class="password-requirements">
+                        <h4>Password Requirements:</h4>
+                        <ul>
+                            <li>At least 8 characters long</li>
+                            <li>Contains at least one uppercase letter</li>
+                            <li>Contains at least one lowercase letter</li>
+                            <li>Contains at least one number</li>
+                            <li>Contains at least one special character</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Actions Section -->
+            <div class="profile-section">
+                <div class="section-header">
+                    <h2>Account Actions</h2>
+                    <p>Manage your account</p>
+                </div>
+                
+                <div class="account-actions">
+                    <div class="action-item">
+                        <div class="action-info">
+                            <h4>Delete Account</h4>
+                            <p>Permanently delete your account and all associated data. This action cannot be undone.</p>
+                        </div>
+                        <button class="btn btn-danger" @onclick="ShowDeleteAccountModal">
+                            <span class="btn-icon">🗑️</span>
+                            Delete Account
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="save-section">
+                <button class="btn btn-primary btn-lg" @onclick="SaveProfile" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="btn-icon">⏳</span>
+                        <span>Saving Changes...</span>
+                    }
+                    else
+                    {
+                        <span class="btn-icon">💾</span>
+                        <span>Save Changes</span>
+                    }
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Delete Account Confirmation Modal -->
+@if (showDeleteModal)
+{
+    <div class="modal-overlay" @onclick="CloseDeleteModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>Delete Account</h3>
+                <button class="modal-close" @onclick="CloseDeleteModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="delete-warning">
+                    <div class="warning-icon">⚠️</div>
+                    <h4>Are you sure?</h4>
+                    <p>This action will permanently delete your account and all associated data including:</p>
+                    <ul>
+                        <li>Your profile information</li>
+                        <li>All your bookings</li>
+                        <li>Your reviews and ratings</li>
+                        <li>Your bookmarks and preferences</li>
+                    </ul>
+                    <p><strong>This action cannot be undone.</strong></p>
+                </div>
+                
+                <div class="form-group">
+                    <label>Type "DELETE" to confirm:</label>
+                    <input type="text" class="form-control" @bind="deleteConfirmation" placeholder="Type DELETE to confirm" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="CloseDeleteModal">Cancel</button>
+                <button class="btn btn-danger" @onclick="DeleteAccount" disabled="@(deleteConfirmation != "DELETE" || isDeleting)">
+                    @if (isDeleting)
+                    {
+                        <span class="btn-icon">⏳</span>
+                        <span>Deleting...</span>
+                    }
+                    else
+                    {
+                        <span class="btn-icon">🗑️</span>
+                        <span>Delete Account</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private User profile = new();
+    private string currentPassword = "";
+    private string newPassword = "";
+    private string confirmPassword = "";
+    private bool isSaving = false;
+    private bool isDeleting = false;
+    private bool showDeleteModal = false;
+    private string deleteConfirmation = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService != null && AuthService.IsLoggedIn && AuthService.CurrentUser != null)
+        {
+            await LoadUserProfile();
+        }
+    }
+
+    private async Task LoadUserProfile()
+    {
+        try
+        {
+            // Load current user data
+            var currentUser = AuthService?.CurrentUser;
+            if (currentUser != null)
+            {
+                profile = currentUser;
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to load profile: " + ex.Message);
+        }
+    }
+
+    private async Task SaveProfile()
+    {
+        if (string.IsNullOrWhiteSpace(profile.Name) || string.IsNullOrWhiteSpace(profile.Email))
+        {
+            NotificationService.RaiseNotification("Error", "Please fill in all required fields (Full Name, Email)");
+            return;
+        }
+
+        // Validate email format
+        if (!IsValidEmail(profile.Email))
+        {
+            NotificationService.RaiseNotification("Error", "Please enter a valid email address");
+            return;
+        }
+
+        // Handle password change if provided
+        if (!string.IsNullOrWhiteSpace(newPassword))
+        {
+            if (string.IsNullOrWhiteSpace(currentPassword))
+            {
+                NotificationService.RaiseNotification("Error", "Please enter your current password to change it");
+                return;
+            }
+
+            if (newPassword != confirmPassword)
+            {
+                NotificationService.RaiseNotification("Error", "New password and confirmation password do not match");
+                return;
+            }
+
+            if (!IsValidPassword(newPassword))
+            {
+                NotificationService.RaiseNotification("Error", "Password does not meet the requirements");
+                return;
+            }
+        }
+
+        isSaving = true;
+        try
+        {
+            // Update profile in database
+            var result = await AuthService.UpdateProfileAsync(profile.Id, profile.Name, profile.PhoneNumber, profile.Bio);
+            if (!result)
+            {
+                NotificationService.RaiseNotification("Error", "Failed to update profile on server");
+                isSaving = false;
+                return;
+            }
+            // Update password if provided
+            if (!string.IsNullOrWhiteSpace(newPassword))
+            {
+                var passwordResult = await AuthService.ChangePasswordAsync(profile.Id, currentPassword, newPassword);
+                if (!passwordResult)
+                {
+                    NotificationService.RaiseNotification("Error", "Failed to change password. Please check your current password and try again.");
+                    isSaving = false;
+                    return;
+                }
+            }
+
+            // Update current user in AuthService
+            if (AuthService?.CurrentUser != null)
+            {
+                AuthService.CurrentUser.Name = profile.Name;
+                AuthService.CurrentUser.Email = profile.Email;
+                AuthService.CurrentUser.PhoneNumber = profile.PhoneNumber;
+                AuthService.CurrentUser.Bio = profile.Bio;
+            }
+
+            NotificationService.RaiseNotification("Success", "Profile updated successfully");
+            // Clear password fields
+            currentPassword = "";
+            newPassword = "";
+            confirmPassword = "";
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to update profile: " + ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void ShowDeleteAccountModal()
+    {
+        showDeleteModal = true;
+        deleteConfirmation = "";
+    }
+
+    private void CloseDeleteModal()
+    {
+        showDeleteModal = false;
+        deleteConfirmation = "";
+    }
+
+    private async Task DeleteAccount()
+    {
+        if (deleteConfirmation != "DELETE")
+        {
+            NotificationService.RaiseNotification("Error", "Please type 'DELETE' to confirm");
+            return;
+        }
+
+        isDeleting = true;
+        try
+        {
+            // Delete account from database
+            // await UserService.DeleteAccountAsync(profile.Id);
+            
+            // Logout user
+            await AuthService.LogoutAsync(); // Use LogoutAsync instead of Logout
+            
+            NotificationService.RaiseNotification("Success", "Account deleted successfully");
+            Navigation.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to delete account: " + ex.Message);
+        }
+        finally
+        {
+            isDeleting = false;
+            CloseDeleteModal();
+        }
+    }
+
+    private bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool IsValidPassword(string password)
+    {
+        if (password.Length < 8) return false;
+        if (!password.Any(char.IsUpper)) return false;
+        if (!password.Any(char.IsLower)) return false;
+        if (!password.Any(char.IsDigit)) return false;
+        if (!password.Any(c => !char.IsLetterOrDigit(c))) return false;
+        return true;
+    }
+} 

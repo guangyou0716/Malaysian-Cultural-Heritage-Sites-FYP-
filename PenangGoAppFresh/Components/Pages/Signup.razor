@@ -1,0 +1,223 @@
+﻿@page "/signup"
+@inject PenangGoAppFresh.Auth.IAuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow-lg p-4" style="max-width: 400px; width: 100%;">
+        <div class="text-center mb-4">
+            <img src="/images/penanggo_logo.png" alt="PenangGo Logo" style="max-width: 100px;" />
+        </div>
+        <h3 class="text-center mb-3">Sign Up</h3>
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="alert alert-danger">@error</div>
+        }
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <input type="text" class="form-control @(nameError ? "is-invalid" : "")" id="name" @bind="name" @onblur="ValidateName" />
+            @if (nameError)
+            {
+                <div class="invalid-feedback">@nameErrorMessage</div>
+            }
+        </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control @(emailError ? "is-invalid" : "")" id="email" @bind="email" @onblur="ValidateEmail" />
+            @if (emailError)
+            {
+                <div class="invalid-feedback">@emailErrorMessage</div>
+            }
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control @(passwordError ? "is-invalid" : "")" id="password" @bind="password" @onblur="ValidatePassword" />
+            <div class="password-requirements mt-2">
+                <small class="text-muted">Password requirements:</small>
+                <ul class="list-unstyled small mt-1">
+                    <li class="@(passwordLength ? "text-success" : "text-muted")">✓ At least 8 characters</li>
+                    <li class="@(passwordUpper ? "text-success" : "text-muted")">✓ One uppercase letter</li>
+                    <li class="@(passwordLower ? "text-success" : "text-muted")">✓ One lowercase letter</li>
+                    <li class="@(passwordDigit ? "text-success" : "text-muted")">✓ One number</li>
+                    <li class="@(passwordSpecial ? "text-success" : "text-muted")">✓ One special character (!@@#$%^&*)</li>
+                </ul>
+            </div>
+            @if (passwordError)
+            {
+                <div class="invalid-feedback">@passwordErrorMessage</div>
+            }
+        </div>
+        <button class="btn btn-primary w-100" @onclick="SignupUser" disabled="@(isLoading || !IsFormValid())">
+            @if (isLoading)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span>Creating Account...</span>
+            }
+            else
+            {
+                <span>Sign Up</span>
+            }
+        </button>
+        <div class="text-center mt-3">
+            <button class="btn btn-link" @onclick="@(() => NavigateTo("/login"))">Already have an account? Login</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string name = string.Empty;
+    private string email = string.Empty;
+    private string password = string.Empty;
+    private string error = string.Empty;
+    private bool isLoading = false;
+
+    // Validation states
+    private bool nameError = false;
+    private bool emailError = false;
+    private bool passwordError = false;
+    private string nameErrorMessage = string.Empty;
+    private string emailErrorMessage = string.Empty;
+    private string passwordErrorMessage = string.Empty;
+
+    // Password requirement states
+    private bool passwordLength = false;
+    private bool passwordUpper = false;
+    private bool passwordLower = false;
+    private bool passwordDigit = false;
+    private bool passwordSpecial = false;
+
+    private void ValidateName()
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            nameError = true;
+            nameErrorMessage = "Name is required";
+        }
+        else if (name.Length < 2)
+        {
+            nameError = true;
+            nameErrorMessage = "Name must be at least 2 characters long";
+        }
+        else
+        {
+            nameError = false;
+            nameErrorMessage = string.Empty;
+        }
+    }
+
+    private void ValidateEmail()
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            emailError = true;
+            emailErrorMessage = "Email is required";
+        }
+        else
+        {
+            // Email format validation using regex
+            var emailRegex = new System.Text.RegularExpressions.Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+            if (!emailRegex.IsMatch(email))
+            {
+                emailError = true;
+                emailErrorMessage = "Please enter a valid email address";
+            }
+            else
+            {
+                emailError = false;
+                emailErrorMessage = string.Empty;
+            }
+        }
+    }
+
+    private void ValidatePassword()
+    {
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            passwordError = true;
+            passwordErrorMessage = "Password is required";
+            ResetPasswordRequirements();
+            return;
+        }
+
+        // Check password requirements
+        passwordLength = password.Length >= 8;
+        passwordUpper = password.Any(char.IsUpper);
+        passwordLower = password.Any(char.IsLower);
+        passwordDigit = password.Any(char.IsDigit);
+        
+        var specialChars = @"!@#$%^&*()_+-=[]{}|;:,.<>?";
+        passwordSpecial = password.Any(c => specialChars.Contains(c));
+
+        // Check if all requirements are met
+        if (passwordLength && passwordUpper && passwordLower && passwordDigit && passwordSpecial)
+        {
+            passwordError = false;
+            passwordErrorMessage = string.Empty;
+        }
+        else
+        {
+            passwordError = true;
+            passwordErrorMessage = "Password does not meet all requirements";
+        }
+    }
+
+    private void ResetPasswordRequirements()
+    {
+        passwordLength = false;
+        passwordUpper = false;
+        passwordLower = false;
+        passwordDigit = false;
+        passwordSpecial = false;
+    }
+
+    private bool IsFormValid()
+    {
+        return !string.IsNullOrWhiteSpace(name) && 
+               !string.IsNullOrWhiteSpace(email) && 
+               !string.IsNullOrWhiteSpace(password) &&
+               !nameError && 
+               !emailError && 
+               !passwordError;
+    }
+
+    private async Task SignupUser()
+    {
+        // Validate all fields before submission
+        ValidateName();
+        ValidateEmail();
+        ValidatePassword();
+
+        if (!IsFormValid())
+        {
+            return;
+        }
+
+        isLoading = true;
+        error = string.Empty;
+
+        try
+        {
+            var result = await AuthService.SignupAsync(name, email, password);
+            
+            if (result.Success)
+            {
+                Navigation.NavigateTo("/dashboard");
+            }
+            else
+            {
+                error = result.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            error = "An error occurred during registration. Please try again.";
+            Console.WriteLine($"Signup error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    [Inject] NavigationManager NavigationManager { get; set; }
+    void NavigateTo(string url) => NavigationManager.NavigateTo(url);
+}

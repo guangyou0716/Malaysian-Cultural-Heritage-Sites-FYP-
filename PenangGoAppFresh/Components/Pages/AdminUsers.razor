@@ -1,0 +1,424 @@
+@page "/adminusers"
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject PenangGoAppFresh.Services.IUserService UserService
+@inject PenangGoAppFresh.Services.NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<div class="admin-users-container fade-in">
+    <!-- Header Section -->
+    <div class="admin-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <span class="title-icon">👥</span>
+                User Management
+            </h1>
+            <p class="page-subtitle">Manage user accounts, roles, and permissions</p>
+        </div>
+    </div>
+
+    @if (!AuthService.IsLoggedIn)
+    {
+        <div class="auth-required-section">
+            <div class="auth-card">
+                <div class="auth-icon">🔐</div>
+                <h3>Authentication Required</h3>
+                <p>Please log in to access admin features</p>
+                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/login"))">
+                    <span class="btn-icon">🔑</span>
+                    Login Now
+                </button>
+            </div>
+        </div>
+    }
+    else if (!AuthService.IsAdmin)
+    {
+        <div class="access-denied-section">
+            <div class="access-denied-card">
+                <div class="access-denied-icon">🚫</div>
+                <h3>Access Denied</h3>
+                <p>You do not have admin privileges to access this page</p>
+                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">
+                    <span class="btn-icon">🏠</span>
+                    Go to Dashboard
+                </button>
+            </div>
+        </div>
+    }
+    else if (users == null)
+    {
+        <div class="loading-section">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <p>Loading users...</p>
+        </div>
+    }
+    else if (users.Count == 0)
+    {
+        <div class="empty-state-section">
+            <div class="empty-state-card">
+                <div class="empty-icon">👥</div>
+                <h3>No Users Found</h3>
+                <p>There are no users registered in the system yet.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="users-content">
+            <!-- Statistics Section -->
+            <div class="users-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@users.Count</span>
+                        <span class="stat-label">Total Users</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👑</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@users.Count(u => u.IsAdmin)</span>
+                        <span class="stat-label">Admins</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@users.Count(u => u.IsActive)</span>
+                        <span class="stat-label">Active Users</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Grid -->
+            <div class="users-grid">
+                @foreach (var user in users)
+                {
+                    <div class="user-card fade-in">
+                        <div class="user-header">
+                            <div class="user-avatar">
+                                <span class="avatar-icon">@(user.IsAdmin ? "👑" : "👤")</span>
+                            </div>
+                            <div class="user-status-badges">
+                                @if (user.IsAdmin)
+                                {
+                                    <span class="status-badge status-admin">Admin</span>
+                                }
+                                @if (user.IsActive)
+                                {
+                                    <span class="status-badge status-active">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-inactive">Inactive</span>
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="user-body">
+                            <h3 class="user-name">@user.Name</h3>
+                            <div class="user-email">@user.Email</div>
+                            
+                            <div class="user-details">
+                                <div class="detail-item">
+                                    <span class="detail-icon">📧</span>
+                                    <span class="detail-text">@user.Email</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-icon">👤</span>
+                                    <span class="detail-text">@(user.IsAdmin ? "Administrator" : "Regular User")</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-icon">📅</span>
+                                    <span class="detail-text">Joined: @(user.CreatedAt.ToString("MMM dd, yyyy"))</span>
+                                </div>
+                            </div>
+                            
+                            <div class="user-actions">
+                                <button class="btn btn-sm btn-primary" @onclick="@(() => EditUser(user))" @onclick:stopPropagation="true">
+                                    <span class="btn-icon">✏️</span>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline" @onclick="@(() => ToggleRole(user))" @onclick:stopPropagation="true">
+                                    <span class="btn-icon">@(user.IsAdmin ? "⬇️" : "⬆️")</span>
+                                    @(user.IsAdmin ? "Demote" : "Promote")
+                                </button>
+                                <button class="btn btn-sm @(user.IsActive ? "btn-warning" : "btn-success")" @onclick="@(() => ToggleActive(user))" @onclick:stopPropagation="true">
+                                    <span class="btn-icon">@(user.IsActive ? "⏸️" : "▶️")</span>
+                                    @(user.IsActive ? "Deactivate" : "Activate")
+                                </button>
+                                @if (user.Id != AuthService.CurrentUser?.Id)
+                                {
+                                    <button class="btn btn-sm btn-danger" @onclick="@(() => DeleteUser(user))" @onclick:stopPropagation="true">
+                                        <span class="btn-icon">🗑️</span>
+                                        Delete
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Edit User Modal -->
+@if (showEditModal && selectedUser != null)
+{
+    <div class="modal-overlay" @onclick="CloseEditModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>Edit User: @selectedUser.Name</h3>
+                <button class="modal-close" @onclick="CloseEditModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input type="text" class="form-control" @bind="editUser.Name" />
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" class="form-control" @bind="editUser.Email" />
+                </div>
+                <div class="form-group">
+                    <label>Phone Number:</label>
+                    <input type="text" class="form-control" @bind="editUser.PhoneNumber" />
+                </div>
+                <div class="form-group">
+                    <label>Bio:</label>
+                    <textarea class="form-control" @bind="editUser.Bio" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Role:</label>
+                    <select class="form-control" @bind="editUser.IsAdmin">
+                        <option value="@false">Regular User</option>
+                        <option value="@true">Administrator</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select class="form-control" @bind="editUser.IsActive">
+                        <option value="@true">Active</option>
+                        <option value="@false">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="CloseEditModal">Cancel</button>
+                <button class="btn btn-primary" @onclick="SaveUserChanges" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="btn-icon">⏳</span>
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span class="btn-icon">💾</span>
+                        <span>Save Changes</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<PenangGoApp.DataAccess.User> users;
+    private bool showEditModal = false;
+    private PenangGoApp.DataAccess.User? selectedUser;
+    private PenangGoApp.DataAccess.User editUser = new();
+    private bool isSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.IsLoggedIn && AuthService.IsAdmin)
+        {
+            try
+            {
+                users = await UserService.GetAllUsersAsync();
+            }
+            catch (Exception ex)
+            {
+                NotificationService.RaiseNotification("Error", "Failed to load users: " + ex.Message);
+                users = new List<PenangGoApp.DataAccess.User>();
+            }
+        }
+    }
+
+    private void EditUser(PenangGoApp.DataAccess.User user)
+    {
+        selectedUser = user;
+        editUser = new PenangGoApp.DataAccess.User
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            Bio = user.Bio,
+            IsAdmin = user.IsAdmin,
+            IsActive = user.IsActive
+        };
+        showEditModal = true;
+    }
+
+    private void CloseEditModal()
+    {
+        showEditModal = false;
+        selectedUser = null;
+        editUser = new();
+    }
+
+    private async Task SaveUserChanges()
+    {
+        if (selectedUser == null) return;
+
+        isSaving = true;
+        try
+        {
+            // Optimistically update the UI
+            var originalUser = users.FirstOrDefault(u => u.Id == selectedUser.Id);
+            if (originalUser != null)
+            {
+                originalUser.Name = editUser.Name;
+                originalUser.Email = editUser.Email;
+                originalUser.PhoneNumber = editUser.PhoneNumber;
+                originalUser.Bio = editUser.Bio;
+                originalUser.IsAdmin = editUser.IsAdmin;
+                originalUser.IsActive = editUser.IsActive;
+            }
+
+            // Update the API
+            var updatedUser = await UserService.UpdateUserAsync(editUser);
+            if (updatedUser != null)
+            {
+                NotificationService.RaiseNotification("Success", $"User {editUser.Name} updated successfully");
+                CloseEditModal();
+                StateHasChanged();
+            }
+            else
+            {
+                // Revert optimistic update on failure
+                await RefreshUsers();
+                NotificationService.RaiseNotification("Error", "Failed to update user");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Revert optimistic update on error
+            await RefreshUsers();
+            NotificationService.RaiseNotification("Error", "Failed to update user: " + ex.Message);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task ToggleRole(PenangGoApp.DataAccess.User user)
+    {
+        // Optimistically update the UI
+        var originalIsAdmin = user.IsAdmin;
+        user.IsAdmin = !user.IsAdmin;
+        StateHasChanged();
+
+        try
+        {
+            var success = await UserService.ToggleUserRoleAsync(user.Id, user.IsAdmin);
+            if (success)
+            {
+                NotificationService.RaiseNotification("Success", $"User {user.Name} {(user.IsAdmin ? "promoted to admin" : "demoted to user")}");
+            }
+            else
+            {
+                // Revert on failure
+                user.IsAdmin = originalIsAdmin;
+                StateHasChanged();
+                NotificationService.RaiseNotification("Error", "Failed to update user role");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Revert on error
+            user.IsAdmin = originalIsAdmin;
+            StateHasChanged();
+            NotificationService.RaiseNotification("Error", "Failed to update user role: " + ex.Message);
+        }
+    }
+
+    private async Task ToggleActive(PenangGoApp.DataAccess.User user)
+    {
+        // Optimistically update the UI
+        var originalIsActive = user.IsActive;
+        user.IsActive = !user.IsActive;
+        StateHasChanged();
+
+        try
+        {
+            var success = await UserService.ToggleUserStatusAsync(user.Id, user.IsActive);
+            if (success)
+            {
+                NotificationService.RaiseNotification("Success", $"User {user.Name} {(user.IsActive ? "activated" : "deactivated")}");
+            }
+            else
+            {
+                // Revert on failure
+                user.IsActive = originalIsActive;
+                StateHasChanged();
+                NotificationService.RaiseNotification("Error", "Failed to update user status");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Revert on error
+            user.IsActive = originalIsActive;
+            StateHasChanged();
+            NotificationService.RaiseNotification("Error", "Failed to update user status: " + ex.Message);
+        }
+    }
+
+    private async Task DeleteUser(PenangGoApp.DataAccess.User user)
+    {
+        // Optimistically remove from UI
+        var originalUsers = users.ToList();
+        users.Remove(user);
+        StateHasChanged();
+
+        try
+        {
+            var success = await UserService.DeleteUserAsync(user.Id);
+            if (success)
+            {
+                NotificationService.RaiseNotification("Success", $"User {user.Name} deleted successfully");
+            }
+            else
+            {
+                // Revert on failure
+                users = originalUsers;
+                StateHasChanged();
+                NotificationService.RaiseNotification("Error", "Failed to delete user");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Revert on error
+            users = originalUsers;
+            StateHasChanged();
+            NotificationService.RaiseNotification("Error", "Failed to delete user: " + ex.Message);
+        }
+    }
+
+    private async Task RefreshUsers()
+    {
+        try
+        {
+            users = await UserService.GetAllUsersAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to refresh users: " + ex.Message);
+        }
+    }
+} 

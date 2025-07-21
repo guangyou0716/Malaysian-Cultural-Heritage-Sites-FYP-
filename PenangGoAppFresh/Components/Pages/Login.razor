@@ -1,0 +1,88 @@
+﻿@page "/login"
+@inject PenangGoAppFresh.Auth.IAuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow-lg p-4" style="max-width: 400px; width: 100%;">
+        <div class="text-center mb-4">
+            <img src="/images/penanggo_logo.png" alt="PenangGo Logo" style="max-width: 100px;" />
+        </div>
+        <h3 class="text-center mb-3">Login</h3>
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="alert alert-danger">@error</div>
+        }
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" @bind="email" />
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" @bind="password" />
+        </div>
+        <button class="btn btn-primary w-100" @onclick="LoginUser" disabled="@isLoading">
+            @if (isLoading)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span>Logging in...</span>
+            }
+            else
+            {
+                <span>Login</span>
+            }
+        </button>
+        <div class="text-center mt-3">
+            <button class="btn btn-link" @onclick="@(() => Navigation.NavigateTo("/signup"))">Sign Up</button>        
+        </div>
+    </div>
+</div>
+
+@code {
+    private string email = string.Empty;
+    private string password = string.Empty;
+    private string error = string.Empty;
+    private bool isLoading = false;
+
+    private async Task LoginUser()
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            error = "Please enter both email and password.";
+            return;
+        }
+
+        isLoading = true;
+        error = string.Empty;
+
+        try
+        {
+            var result = await AuthService.LoginAsync(email, password);
+            
+            if (result.Success)
+            {
+                // Check if user is admin and redirect accordingly
+                if (result.User?.IsAdmin == true)
+                {
+                    Navigation.NavigateTo("/admindashboard");
+                }
+                else
+                {
+                    Navigation.NavigateTo("/dashboard");
+                }
+            }
+            else
+            {
+                error = result.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            error = "An error occurred during login. Please try again.";
+            Console.WriteLine($"Login error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

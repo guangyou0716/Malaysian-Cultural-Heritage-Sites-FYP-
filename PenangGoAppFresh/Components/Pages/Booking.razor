@@ -1,0 +1,185 @@
+@page "/booking"
+@inject PenangGoAppFresh.Services.BookingService BookingService
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject PenangGoAppFresh.Services.NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<div class="booking-container fade-in">
+    <!-- Header Section -->
+    <div class="booking-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <span class="title-icon">📅</span>
+                My Bookings
+            </h1>
+            <p class="page-subtitle">Manage your cultural event reservations and bookings</p>
+        </div>
+    </div>
+
+    @if (AuthService == null || !AuthService.IsLoggedIn)
+    {
+        <div class="auth-required-section">
+            <div class="auth-card">
+                <div class="auth-icon">🔐</div>
+                <h3>Authentication Required</h3>
+                <p>Please log in to view and manage your bookings</p>
+                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/login"))">
+                    <span class="btn-icon">🔑</span>
+                    Login Now
+                </button>
+            </div>
+        </div>
+    }
+    else if (bookings == null)
+    {
+        <div class="loading-section">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <p>Loading your bookings...</p>
+        </div>
+    }
+    else if (bookings.Count == 0)
+    {
+        <div class="empty-state-section">
+            <div class="empty-state-card">
+                <div class="empty-icon">📋</div>
+                <h3>No Bookings Yet</h3>
+                <p>You haven't made any event bookings yet. Start exploring cultural events!</p>
+                <div class="empty-actions">
+                    <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/events"))">
+                        <span class="btn-icon">🎉</span>
+                        Browse Events
+                    </button>
+                    <button class="btn btn-outline" @onclick="@(() => Navigation.NavigateTo("/map"))">
+                        <span class="btn-icon">🗺️</span>
+                        Explore Map
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="bookings-content">
+            <div class="bookings-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@bookings.Count</span>
+                        <span class="stat-label">Total Bookings</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@bookings.Count(b => b.Status == PenangGoApp.DataAccess.BookingStatus.Confirmed)</span>
+                        <span class="stat-label">Confirmed</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@bookings.Count(b => b.Status == PenangGoApp.DataAccess.BookingStatus.Pending)</span>
+                        <span class="stat-label">Pending</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bookings-grid">
+                @foreach (var booking in bookings.OrderByDescending(b => b.BookingTime))
+                {
+                    <div class="booking-card fade-in clickable" @onclick="@(() => Navigation.NavigateTo($"/event/{booking.EventId}"))">
+                        <div class="booking-header-card">
+                            @if (!string.IsNullOrEmpty(booking.Event.ImageUrl))
+                            {
+                                <div class="booking-image" style="background-image: url('@booking.Event.ImageUrl');">
+                                    <div class="booking-overlay"></div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="booking-image-placeholder">
+                                    <span class="placeholder-icon">🎭</span>
+                                </div>
+                            }
+                            <div class="booking-status-badge @GetStatusClass(booking.Status.ToString())">
+                                @booking.Status.ToString()
+                            </div>
+                        </div>
+                        
+                        <div class="booking-body">
+                            <h3 class="booking-title">@booking.Event.Name</h3>
+                            
+                            <div class="booking-details">
+                                <div class="detail-item">
+                                    <span class="detail-icon">📅</span>
+                                    <span class="detail-text">@booking.Event.Date.ToString("dddd, MMMM dd, yyyy")</span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-icon">🕒</span>
+                                    <span class="detail-text">@booking.Event.Date.ToString("HH:mm")</span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-icon">📍</span>
+                                    <span class="detail-text">@booking.Event.Location</span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-icon">💳</span>
+                                    <span class="detail-text">Booked on @booking.BookingTime.ToString("MMM dd, yyyy 'at' HH:mm")</span>
+                                </div>
+                            </div>
+                            
+                            <div class="booking-actions">
+                                @if (booking.Status == PenangGoApp.DataAccess.BookingStatus.Pending)
+                                {
+                                    <button class="btn btn-sm btn-danger" @onclick="@(() => CancelBooking(booking.Id))" @onclick:stopPropagation="true">
+                                        <span class="btn-icon">❌</span>
+                                        Cancel
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<PenangGoApp.DataAccess.Booking> bookings;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService != null && AuthService.IsLoggedIn && AuthService.CurrentUser != null)
+        {
+            bookings = await BookingService.GetUserBookingsAsync(AuthService.CurrentUser.Id);
+            // Show notification if navigated here after booking
+            if (Navigation.Uri.Contains("bookingSuccess=true"))
+            {
+                NotificationService.RaiseNotification("Booking Successful", "Your event booking was successful!");
+            }
+        }
+    }
+
+    private string GetStatusClass(string status)
+    {
+        return status?.ToLower() switch
+        {
+            "confirmed" => "status-confirmed",
+            "pending" => "status-pending",
+            "cancelled" => "status-cancelled",
+            _ => "status-default"
+        };
+    }
+
+    private async Task CancelBooking(int bookingId)
+    {
+        // TODO: Implement booking cancellation
+        NotificationService.RaiseNotification("Cancellation", "Booking cancellation feature coming soon!");
+    }
+} 

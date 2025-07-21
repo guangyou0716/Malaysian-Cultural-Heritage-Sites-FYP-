@@ -1,0 +1,272 @@
+@page "/map"
+@inject NavigationManager Navigation
+@inject PenangGoAppFresh.Services.HeritageSiteService HeritageSiteService
+@inject IJSRuntime JSRuntime
+
+<div class="map-container fade-in">
+    <!-- Map Header -->
+    <section class="map-header">
+        <div class="header-content">
+            <h1 class="page-title">Interactive Heritage Map</h1>
+            <p class="page-subtitle">Explore Penang's cultural heritage sites</p>
+        </div>
+        <div class="map-controls">
+            <button class="control-btn" @onclick="@(() => ToggleFilter())">
+                <span class="control-icon">🔍</span>
+                Filter
+            </button>
+        </div>
+    </section>
+
+    <!-- Filter Panel -->
+    @if (showFilter)
+    {
+        <section class="filter-panel slide-in">
+            <div class="filter-content">
+                <h3>Filter Sites</h3>
+                <div class="filter-options">
+                    <div class="filter-group">
+                        <label>Category</label>
+                        <div class="checkbox-group">
+                            @foreach (var cat in allCategories)
+                            {
+                            <label class="checkbox-item">
+                                    <input type="checkbox" checked="@selectedCategories.Contains(cat)" @onchange="@((e) => UpdateCategoryFilter(cat, e.Value))" />
+                                <span class="checkmark"></span>
+                                    @cat
+                            </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+
+    <!-- Map Area -->
+    <section class="map-area">
+        <div class="map-placeholder">
+            <div id="map" style="height:500px;width:100%"></div>
+        </div>
+    </section>
+
+    <!-- Site List -->
+    <section class="site-list">
+        <h2>Nearby Heritage Sites</h2>
+        <div class="sites-grid">
+            @foreach (var site in filteredSites)
+            {
+                <div class="site-card" @onclick="@(() => ViewSiteDetails(site))">
+                    <div class="site-image" style="background-image: @site.Gradient">
+                        <div class="site-icon">@site.Icon</div>
+                    </div>
+                    <div class="site-content">
+                        <h3>@site.Name</h3>
+                        <p class="site-category">@site.Category</p>
+                        <p class="site-description">@site.Description</p>
+                        <div class="site-meta">
+                            <span class="distance">@site.Distance km away</span>
+                            <span class="rating">⭐ @site.Rating</span>
+                        </div>
+                        <div class="site-actions">
+                            <button class="btn btn-primary btn-sm"
+                                    @onclick:stopPropagation
+                                    @onclick="@(() => ViewSiteDetails(site))">
+                                <span class="btn-icon">👁️</span>
+                                View
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Selected Site Modal -->
+    @if (selectedSite != null)
+    {
+        <div class="modal-overlay" @onclick="@(() => CloseModal())">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <h2>@selectedSite.Name</h2>
+                    <button class="close-btn" @onclick="@(() => CloseModal())">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="site-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Category:</span>
+                            <span class="detail-value">@selectedSite.Category</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Location:</span>
+                            <span class="detail-value">@selectedSite.Location</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Hours:</span>
+                            <span class="detail-value">@selectedSite.Hours</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Entry Fee:</span>
+                            <span class="detail-value">@selectedSite.EntryFee</span>
+                        </div>
+                    </div>
+                    <p class="site-description-full">@selectedSite.FullDescription</p>
+                    <div class="modal-actions">
+                        <button class="btn btn-outline" @onclick="@(() => GetDirections(selectedSite))">
+                            <span class="btn-icon">🧭</span>
+                            Get Directions
+                        </button>
+                        @if (selectedSite.HasPanoramaContent)
+                        {
+                            <button class="btn btn-primary" @onclick="@(() => ViewPanorama(selectedSite))">
+                                <span class="btn-icon">📷</span>
+                                View 360°
+                            </button>
+                        }
+                        <button class="btn btn-primary" @onclick="@(() => ViewSiteDetails(selectedSite))">
+                            <span class="btn-icon">📖</span>
+                            Learn More
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool showFilter = false;
+    private HeritageSite? selectedSite = null;
+    private List<HeritageSite> allSites = new();
+    private List<HeritageSite> filteredSites = new();
+    private HashSet<string> selectedCategories = new();
+    private bool filterPanorama = false;
+    private bool filterAccessible = false;
+    private List<string> allCategories = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var dbSites = await HeritageSiteService.GetAllAsync();
+        allSites = dbSites.Select(s => new HeritageSite
+        { 
+            Id = s.Id,
+            Name = s.Name,
+            Category = s.Category ?? "",
+            Description = s.Description,
+            Location = s.Location,
+            Icon = "🏛️", // Optionally choose based on category
+            X = s.Longitude, // Use Longitude for X
+            Y = s.Latitude,  // Use Latitude for Y
+            Distance = 0, // Optionally calculate if you have user location
+            Rating = s.AverageRating,
+            HasPanoramaContent = s.HasPanoramaContent,
+            IsAccessible = s.IsAccessible,
+            Gradient = "linear-gradient(135deg, #D4AF37, #8B0000)", // Optionally choose based on category
+            Hours = s.VisitingHours ?? "",
+            EntryFee = s.EntryFee ?? "",
+            FullDescription = s.Description, // Or combine with other info
+            CreatedAt = s.CreatedAt
+        }).ToList();
+        allCategories = allSites.Select(s => s.Category).Distinct().ToList();
+        selectedCategories = allCategories.ToHashSet();
+        ApplyFilters();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (filteredSites.Count == 0)
+            return;
+        // Center map on first site or Penang default
+        double centerLat = filteredSites[0].Y;
+        double centerLng = filteredSites[0].X;
+        int zoom = 13;
+        var sitesForJs = filteredSites.Select(s => new { name = s.Name, category = s.Category, x = s.X, y = s.Y }).ToList();
+        await JSRuntime.InvokeVoidAsync("leafletBlazor.initMap", "map", sitesForJs, centerLat, centerLng, zoom);
+    }
+
+    private void ToggleFilter()
+    {
+        showFilter = !showFilter;
+    }
+
+    private void ToggleSearch()
+    {
+        // Implement location search
+    }
+
+    private void UpdateCategoryFilter(string category, object? value)
+    {
+        if (selectedCategories.Contains(category))
+            selectedCategories.Remove(category);
+        else
+            selectedCategories.Add(category);
+        ApplyFilters();
+    }
+
+    private void UpdatePanoramaFilter(object? value)
+    {
+        filterPanorama = !filterPanorama;
+        ApplyFilters();
+    }
+
+    private void UpdateAccessibleFilter(object? value)
+    {
+        filterAccessible = !filterAccessible;
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        filteredSites = allSites
+            .Where(s => selectedCategories.Contains(s.Category))
+            .Where(s => !filterPanorama || s.HasPanoramaContent)
+            .Where(s => !filterAccessible || s.IsAccessible)
+            .ToList();
+    }
+
+    private void SelectSite(HeritageSite site)
+    {
+        selectedSite = site;
+    }
+
+    private void CloseModal()
+    {
+        selectedSite = null;
+    }
+
+    private void ViewSiteDetails(HeritageSite site)
+    {
+        Navigation.NavigateTo($"/site/{site.Id}");
+    }
+
+    private void GetDirections(HeritageSite site)
+    {
+        // Implement directions functionality
+    }
+
+    private void ViewPanorama(HeritageSite site)
+    {
+        // Implement panorama viewing functionality
+    }
+
+    public class HeritageSite
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Category { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Distance { get; set; }
+        public double Rating { get; set; }
+        public bool HasPanoramaContent { get; set; }
+        public bool IsAccessible { get; set; }
+        public string Gradient { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Location { get; set; } = "";
+        public string Hours { get; set; } = "";
+        public string EntryFee { get; set; } = "";
+        public string FullDescription { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+    }
+} 

@@ -1,0 +1,351 @@
+@page "/events"
+@using PenangGoAppFresh.Services
+@inject NavigationManager Navigation
+@inject PenangGoAppFresh.Services.NotificationService NotificationService
+@inject PenangGoAppFresh.Services.EventService EventService
+
+<div class="events-container fade-in">
+    <!-- Events Header -->
+    <section class="events-header">
+        <div class="header-content">
+            <h1 class="page-title">Cultural Events & Tours</h1>
+            <p class="page-subtitle">Discover upcoming cultural events, festivals, and guided tours in Penang</p>
+        </div>
+        <div class="header-actions">
+            <button class="filter-btn" @onclick="@(() => ToggleFilter())">
+                <span class="btn-icon">🔍</span>
+                Filter
+            </button>
+        </div>
+    </section>
+
+    <!-- Filter Panel -->
+    @if (showFilter)
+    {
+        <section class="filter-panel slide-in">
+            <div class="filter-content">
+                <h3>Filter Events</h3>
+                <div class="filter-options">
+                    <div class="filter-group">
+                        <label>Event Type</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked @onchange="@((e) => UpdateTypeFilter("Festival", e.Value))" />
+                                <span class="checkmark"></span>
+                                Festival
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked @onchange="@((e) => UpdateTypeFilter("Tour", e.Value))" />
+                                <span class="checkmark"></span>
+                                Guided Tour
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked @onchange="@((e) => UpdateTypeFilter("Workshop", e.Value))" />
+                                <span class="checkmark"></span>
+                                Workshop
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked @onchange="@((e) => UpdateTypeFilter("Exhibition", e.Value))" />
+                                <span class="checkmark"></span>
+                                Exhibition
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>Date Range</label>
+                        <div class="date-filters">
+                            <button class="date-btn @(selectedDateRange == "all" ? "active" : "")" @onclick="@(() => SetDateRange("all"))">
+                                All
+                            </button>
+                            <button class="date-btn @(selectedDateRange == "today" ? "active" : "")" @onclick="@(() => SetDateRange("today"))">
+                                Today
+                            </button>
+                            <button class="date-btn @(selectedDateRange == "week" ? "active" : "")" @onclick="@(() => SetDateRange("week"))">
+                                This Week
+                            </button>
+                            <button class="date-btn @(selectedDateRange == "month" ? "active" : "")" @onclick="@(() => SetDateRange("month"))">
+                                This Month
+                            </button>
+                            <button class="date-btn @(selectedDateRange == "future" ? "active" : "")" @onclick="@(() => SetDateRange("future"))">
+                                Future
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+
+    <!-- Featured Event -->
+    @if (featuredEvent != null)
+    {
+        <section class="featured-event">
+            <div class="featured-content">
+                <div class="featured-badge">Featured Event</div>
+                <h2 class="featured-title">@featuredEvent.Title</h2>
+                <p class="featured-description">@featuredEvent.Description</p>
+                <div class="featured-meta">
+                    <div class="meta-item">
+                        <span class="meta-icon">📅</span>
+                        <span>@featuredEvent.Date.ToString("MMM dd, yyyy")</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">🕐</span>
+                        <span>@featuredEvent.Time</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">📍</span>
+                        <span>@featuredEvent.Location</span>
+                    </div>
+                </div>
+                <div class="featured-actions">
+                    <button class="btn btn-primary" @onclick="@(() => BookEvent(featuredEvent))" disabled="@bookedEventIds.Contains(featuredEvent.Id)">
+                        <span class="btn-icon">🎫</span>
+                        @(bookedEventIds.Contains(featuredEvent.Id) ? "Booked" : "Book Now")
+                    </button>
+                    <button class="btn btn-outline" @onclick="@(() => ViewEventDetails(featuredEvent))">
+                        <span class="btn-icon">👁️</span>
+                        Learn More
+                    </button>
+                </div>
+            </div>
+            <div class="featured-image" style="background-image: @featuredEvent.Gradient">
+                <div class="featured-icon">@featuredEvent.Icon</div>
+            </div>
+        </section>
+    }
+
+    <!-- Events List -->
+    <section class="events-list">
+        <div class="list-header">
+            <h2>Upcoming Events</h2>
+            <div class="view-toggle">
+                <button class="view-btn @(viewMode == "grid" ? "active" : "")" @onclick="@(() => SetViewMode("grid"))">
+                    <span class="view-icon">⊞</span>
+                </button>
+                <button class="view-btn @(viewMode == "list" ? "active" : "")" @onclick="@(() => SetViewMode("list"))">
+                    <span class="view-icon">☰</span>
+                </button>
+            </div>
+        </div>
+
+        @if (viewMode == "grid")
+        {
+            <div class="events-grid">
+                @foreach (var evt in filteredEvents)
+                {
+                    <div class="event-card clickable" @onclick="@(() => ViewEventDetails(evt))">
+                        <div class="event-image" style="background-image: @evt.Gradient">
+                            <div class="event-icon">@evt.Icon</div>
+                            @if (evt.IsPopular)
+                            {
+                                <div class="popular-badge">Popular</div>
+                            }
+                            @if (evt.IsNew)
+                            {
+                                <div class="new-badge">New</div>
+                            }
+                        </div>
+                        <div class="event-content">
+                            <div class="event-type">@evt.Type</div>
+                            <h3>@evt.Title</h3>
+                            <p class="event-description">@evt.Description</p>
+                            <div class="event-meta">
+                                <div class="meta-row">
+                                    <span class="meta-icon">📅</span>
+                                    <span>@evt.Date.ToString("MMM dd")</span>
+                                </div>
+                                <div class="meta-row">
+                                    <span class="meta-icon">🕐</span>
+                                    <span>@evt.Time</span>
+                                </div>
+                                <div class="meta-row">
+                                    <span class="meta-icon">📍</span>
+                                    <span>@evt.Location</span>
+                                </div>
+                                <div class="meta-row">
+                                    <span class="meta-icon">💰</span>
+                                    <span>@evt.Price</span>
+                                </div>
+                            </div>
+                            <div class="event-actions">
+                                <button class="btn btn-primary btn-sm" @onclick:stopPropagation @onclick="@(() => BookEvent(evt))" disabled="@bookedEventIds.Contains(evt.Id)">
+                                    <span class="btn-icon">🎫</span>
+                                    @(bookedEventIds.Contains(evt.Id) ? "Booked" : "Book")
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="events-list-view">
+                @foreach (var evt in filteredEvents)
+                {
+                    <div class="event-list-item clickable" @onclick="@(() => ViewEventDetails(evt))">
+                        <div class="event-list-image" style="background-image: @evt.Gradient">
+                            <div class="event-icon">@evt.Icon</div>
+                        </div>
+                        <div class="event-list-content">
+                            <div class="event-list-header">
+                                <div class="event-type">@evt.Type</div>
+                                @if (evt.IsPopular)
+                                {
+                                    <div class="popular-badge">Popular</div>
+                                }
+                            </div>
+                            <h3>@evt.Title</h3>
+                            <p class="event-description">@evt.Description</p>
+                            <div class="event-list-meta">
+                                <span class="meta-item">📅 @evt.Date.ToString("MMM dd")</span>
+                                <span class="meta-item">🕐 @evt.Time</span>
+                                <span class="meta-item">📍 @evt.Location</span>
+                                <span class="meta-item">💰 @evt.Price</span>
+                            </div>
+                        </div>
+                        <div class="event-list-actions">
+                            <button class="btn btn-primary btn-sm" @onclick:stopPropagation @onclick="@(() => BookEvent(evt))" disabled="@bookedEventIds.Contains(evt.Id)">
+                                <span class="btn-icon">🎫</span>
+                                @(bookedEventIds.Contains(evt.Id) ? "Booked" : "Book")
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    private bool showFilter = false;
+    private string viewMode = "grid";
+    private HashSet<string> selectedTypes = new() { "Festival", "Tour", "Workshop", "Exhibition" };
+    private string selectedDateRange = "all";
+    private List<Event> filteredEvents = new();
+    private Event? selectedEvent = null;
+
+    private Event? featuredEvent = null;
+    private List<Event> events = new();
+    private HashSet<int> bookedEventIds = new();
+
+    [Inject] PenangGoAppFresh.Services.BookingService BookingService { get; set; }
+    [Inject] PenangGoAppFresh.Auth.AuthService AuthService { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch events from the database
+        var dbEvents = await EventService.GetAllAsync();
+        events = dbEvents.Select(e => new Event {
+            Id = e.Id, // Set the Id
+            Title = e.Name,
+            Type = e.Type ?? "",
+            Icon = e.Icon ?? "🎉",
+            Date = e.StartTime,
+            Time = e.StartTime.ToString("hh:mm tt") + (e.EndTime != null ? $" - {e.EndTime:hh:mm tt}" : ""),
+            Location = e.Location,
+            Price = e.Price.HasValue ? $"RM {e.Price.Value:F2}" : "Free",
+            Description = e.Description,
+            Gradient = e.Gradient ?? "linear-gradient(135deg, #D4AF37, #8B0000)",
+            IsPopular = e.IsPopular,
+            IsNew = e.IsNew
+        }).OrderBy(e => e.Date).ToList();
+        // Set featured event as the soonest upcoming event
+        featuredEvent = events.FirstOrDefault();
+        filteredEvents = events.ToList();
+        if (AuthService != null && AuthService.IsLoggedIn)
+        {
+            var userBookings = await BookingService.GetUserBookingsAsync(AuthService.CurrentUser.Id);
+            bookedEventIds = userBookings
+            .Select(b => b.EventId)
+            .ToHashSet();
+        }
+    }
+
+    private void ToggleFilter()
+    {
+        showFilter = !showFilter;
+    }
+
+    private void UpdateTypeFilter(string type, object? value)
+    {
+        if (selectedTypes.Contains(type))
+            selectedTypes.Remove(type);
+        else
+            selectedTypes.Add(type);
+        ApplyFilters();
+    }
+
+    private void SetDateRange(string range)
+    {
+        selectedDateRange = range;
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        var now = DateTime.Now;
+        var startOfNextMonth = new DateTime(now.Year, now.Month, 1).AddMonths(1);
+        filteredEvents = events
+            .Where(e => selectedTypes.Contains(e.Type))
+            .Where(e => e.Date >= now.Date) // Always exclude past events
+            .Where(e =>
+                selectedDateRange == "today" ? e.Date.Date == now.Date :
+                selectedDateRange == "week" ? e.Date >= now.Date && e.Date < now.AddDays(7) :
+                selectedDateRange == "month" ? e.Date >= now.Date && e.Date < startOfNextMonth :
+                selectedDateRange == "future" ? e.Date >= startOfNextMonth :
+                true // 'all' or default
+            )
+            .ToList();
+    }
+
+    private void SetViewMode(string mode)
+    {
+        viewMode = mode;
+    }
+
+    private async void BookEvent(Event evt)
+    {
+        if (AuthService == null || !AuthService.IsLoggedIn)
+        {
+            NotificationService.RaiseNotification("Login Required", "Please log in to book events.");
+            Navigation.NavigateTo("/login");
+            return;
+        }
+        if (AuthService != null && AuthService.CurrentUser != null)
+        {
+            await BookingService.BookEventAsync(AuthService.CurrentUser.Id, evt.Id);
+            bookedEventIds.Add(evt.Id);
+            NotificationService.RaiseNotification("Booked", $"Event '{evt.Title}' has been booked.");
+            StateHasChanged();
+        }
+    }
+
+    private void ViewEventDetails(Event evt)
+    {
+        Navigation.NavigateTo($"/event/{evt.Id}");
+    }
+
+    private void SelectEvent(Event evt)
+    {
+        selectedEvent = evt;
+    }
+
+    public class Event
+    {
+        public int Id { get; set; } // Add database Id for robust lookups
+        public string Title { get; set; } = "";
+        public string Type { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public DateTime Date { get; set; }
+        public string Time { get; set; } = "";
+        public string Location { get; set; } = "";
+        public string Price { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Gradient { get; set; } = "";
+        public bool IsPopular { get; set; }
+        public bool IsNew { get; set; }
+    }
+} 

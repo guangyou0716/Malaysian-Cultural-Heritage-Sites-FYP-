@@ -1,0 +1,505 @@
+@page "/adminevents"
+@inject PenangGoAppFresh.Services.EventService EventService
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject PenangGoAppFresh.Services.NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+
+<div class="admin-events-container fade-in">
+    <!-- Header Section -->
+    <div class="admin-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <span class="title-icon">🎉</span>
+                Events Management
+            </h1>
+            <p class="page-subtitle">Manage cultural events, festivals, and activities</p>
+        </div>
+    </div>
+
+    @if (!AuthService.IsAdmin)
+    {
+        <div class="access-denied-section">
+            <div class="access-denied-card">
+                <div class="access-denied-icon">🚫</div>
+                <h3>Access Denied</h3>
+                <p>You do not have admin privileges to access this page</p>
+                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">
+                    <span class="btn-icon">🏠</span>
+                    Go to Dashboard
+                </button>
+            </div>
+        </div>
+    }
+    else if (events == null)
+    {
+        <div class="loading-section">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <p>Loading events...</p>
+        </div>
+    }
+    else if (events.Count == 0)
+    {
+        <div class="empty-state-section">
+            <div class="empty-state-card">
+                <div class="empty-icon">🎉</div>
+                <h3>No Events Found</h3>
+                <p>There are no events in the system yet.</p>
+                <button class="btn btn-primary" @onclick="ShowAddModal">
+                    <span class="btn-icon">➕</span>
+                    Add First Event
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="events-content">
+            <!-- Statistics Section -->
+            <div class="events-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">🎉</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@events.Count</span>
+                        <span class="stat-label">Total Events</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@events.Count(e => e.StartTime > DateTime.Now)</span>
+                        <span class="stat-label">Upcoming</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@events.Count(e => e.IsActive)</span>
+                        <span class="stat-label">Active</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <span class="stat-number">RM @(events.Where(e => e.Price.HasValue).Any() ? events.Where(e => e.Price.HasValue).Average(e => e.Price.Value).ToString("F0") : "0")</span>
+                        <span class="stat-label">Avg Price</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@(events.Any() ? events.Average(e => e.MaxCapacity).ToString("F0") : "0")</span>
+                        <span class="stat-label">Avg Capacity</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="action-bar">
+                <div class="search-section">
+                    <input type="text" class="form-control" placeholder="Search events..." @bind="searchTerm" />
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-outline" @onclick="ClearSearch">
+                        <span class="btn-icon">🔄</span>
+                        Clear
+                    </button>
+                    <button class="btn btn-primary" @onclick="ShowAddModal">
+                        <span class="btn-icon">➕</span>
+                        Add New Event
+                    </button>
+                </div>
+            </div>
+
+            <!-- Events Grid -->
+            <div class="events-grid">
+                @foreach (var ev in filteredEvents)
+                {
+                    <div class="event-card fade-in">
+                        <div class="event-header">
+                            <div class="event-status-badges">
+                                @if (ev.IsActive)
+                                {
+                                    <span class="status-badge status-active">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-inactive">Inactive</span>
+                                }
+                                @if (ev.StartTime > DateTime.Now)
+                                {
+                                    <span class="status-badge status-upcoming">Upcoming</span>
+                                }
+                                else if (ev.StartTime <= DateTime.Now && ev.EndTime >= DateTime.Now)
+                                {
+                                    <span class="status-badge status-ongoing">Ongoing</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-past">Past</span>
+                                }
+                            </div>
+                            <div class="event-id">#@ev.Id</div>
+                        </div>
+                        
+                        <div class="event-body">
+                            <div class="event-info">
+                                <h3 class="event-title">@ev.Title</h3>
+                                <div class="event-location">
+                                    <span class="location-icon">📍</span>
+                                    <span class="location-text">@ev.Location</span>
+                                </div>
+                                <div class="event-description">
+                                    @(ev.Description.Length > 150 ? ev.Description.Substring(0, 150) + "..." : ev.Description)
+                                </div>
+                                <div class="event-details">
+                                    <div class="detail-item">
+                                        <span class="detail-icon">📅</span>
+                                        <span class="detail-text">@ev.StartTime.ToString("MMM dd, yyyy HH:mm") - @ev.EndTime.ToString("MMM dd, yyyy HH:mm")</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-icon">💰</span>
+                                        <span class="detail-text">RM @(ev.Price?.ToString("F2") ?? "Free")</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-icon">👥</span>
+                                        <span class="detail-text">@ev.MaxCapacity people</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(ev.Type))
+                                    {
+                                        <div class="detail-item">
+                                            <span class="detail-icon">🏷️</span>
+                                            <span class="detail-text">@ev.Type</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            
+                            <div class="event-actions">
+                                <button class="btn btn-sm btn-warning" @onclick="@(() => EditEvent(ev))" @onclick:stopPropagation="true">
+                                    <span class="btn-icon">✏️</span>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger" @onclick="@(() => DeleteEvent(ev))" @onclick:stopPropagation="true">
+                                    <span class="btn-icon">🗑️</span>
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Add/Edit Event Modal -->
+@if (showModal)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@(isEditing ? "Edit Event: " + selectedEvent?.Title : "Add New Event")</h3>
+                <button class="modal-close" @onclick="CloseModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Title *:</label>
+                    <input type="text" class="form-control" @bind="editEvent.Title" placeholder="Enter event title" />
+                </div>
+                <div class="form-group">
+                    <label>Description *:</label>
+                    <textarea class="form-control" @bind="editEvent.Description" rows="3" placeholder="Enter event description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Location *:</label>
+                    <input type="text" class="form-control" @bind="editEvent.Location" placeholder="Enter event location" />
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Start Time *:</label>
+                            <input type="datetime-local" class="form-control" value="@startTimeString" @onchange="@((e) => startTimeString = e.Value?.ToString() ?? "")" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>End Time *:</label>
+                            <input type="datetime-local" class="form-control" value="@endTimeString" @onchange="@((e) => endTimeString = e.Value?.ToString() ?? "")" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Price (RM):</label>
+                            <input type="number" step="0.01" class="form-control" @bind="editEvent.Price" placeholder="0.00" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Capacity:</label>
+                            <input type="number" class="form-control" @bind="editEvent.MaxCapacity" placeholder="100" />
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Type:</label>
+                    <input type="text" class="form-control" @bind="editEvent.Type" placeholder="e.g., Festival, Workshop, Exhibition" />
+                </div>
+                <div class="form-group">
+                    <label>Image URL:</label>
+                    <input type="url" class="form-control" @bind="editEvent.ImageUrl" placeholder="https://example.com/event-image.jpg" />
+                </div>
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select class="form-control" @bind="editEvent.IsActive">
+                        <option value="@true">Active</option>
+                        <option value="@false">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                <button class="btn btn-primary" @onclick="SaveEvent" disabled="@isSaving">
+                    @if (isSaving)
+                    {
+                        <span class="btn-icon">⏳</span>
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span class="btn-icon">💾</span>
+                        <span>@(isEditing ? "Update Event" : "Add Event")</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<PenangGoApp.DataAccess.Event> events;
+    private string searchTerm = "";
+    private bool showModal = false;
+    private bool isEditing = false;
+    private bool isSaving = false;
+    private PenangGoApp.DataAccess.Event? selectedEvent;
+    private PenangGoApp.DataAccess.Event editEvent = new();
+    private string startTimeString = "";
+    private string endTimeString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService.IsAdmin)
+        {
+            await LoadEvents();
+        }
+    }
+
+    private async Task LoadEvents()
+    {
+        try
+        {
+            events = await EventService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to load events: " + ex.Message);
+            events = new List<PenangGoApp.DataAccess.Event>();
+        }
+    }
+
+    private IEnumerable<PenangGoApp.DataAccess.Event> filteredEvents
+    {
+        get
+        {
+            var filtered = events.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                filtered = filtered.Where(e => 
+                    e.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    e.Location.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    e.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (e.Type?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true));
+            }
+
+            return filtered.OrderBy(e => e.StartTime);
+        }
+    }
+
+    private void ShowAddModal()
+    {
+        isEditing = false;
+        selectedEvent = null;
+        editEvent = new PenangGoApp.DataAccess.Event
+        {
+            IsActive = true,
+            Price = 0,
+            MaxCapacity = 100
+        };
+        startTimeString = DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
+        endTimeString = DateTime.Now.AddHours(2).ToString("yyyy-MM-ddTHH:mm");
+        showModal = true;
+    }
+
+    private void EditEvent(PenangGoApp.DataAccess.Event ev)
+    {
+        isEditing = true;
+        selectedEvent = ev;
+        editEvent = new PenangGoApp.DataAccess.Event
+        {
+            Id = ev.Id,
+            Title = ev.Title,
+            Description = ev.Description,
+            Location = ev.Location,
+            StartTime = ev.StartTime,
+            EndTime = ev.EndTime,
+            Price = ev.Price,
+            MaxCapacity = ev.MaxCapacity,
+            Type = ev.Type,
+            ImageUrl = ev.ImageUrl,
+            IsActive = ev.IsActive
+        };
+        startTimeString = ev.StartTime.ToString("yyyy-MM-ddTHH:mm");
+        endTimeString = ev.EndTime.ToString("yyyy-MM-ddTHH:mm");
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        selectedEvent = null;
+        editEvent = new();
+        startTimeString = "";
+        endTimeString = "";
+    }
+
+    private async Task SaveEvent()
+    {
+        if (string.IsNullOrWhiteSpace(editEvent.Title) || 
+            string.IsNullOrWhiteSpace(editEvent.Description) || 
+            string.IsNullOrWhiteSpace(editEvent.Location))
+        {
+            NotificationService.RaiseNotification("Error", "Please fill in all required fields (Title, Description, Location)");
+            return;
+        }
+
+        if (!DateTime.TryParse(startTimeString, out var startTime) || !DateTime.TryParse(endTimeString, out var endTime))
+        {
+            NotificationService.RaiseNotification("Error", "Please enter valid start and end times");
+            return;
+        }
+
+        // Ensure we're working with DateTime objects, not TimeOnly
+        startTime = DateTime.SpecifyKind(startTime, DateTimeKind.Local);
+        endTime = DateTime.SpecifyKind(endTime, DateTimeKind.Local);
+
+        if (startTime >= endTime)
+        {
+            NotificationService.RaiseNotification("Error", "End time must be after start time");
+            return;
+        }
+
+        editEvent.StartTime = startTime;
+        editEvent.EndTime = endTime;
+
+        isSaving = true;
+        try
+        {
+            if (isEditing)
+            {
+                // Update existing event - use the original event object to avoid tracking conflicts
+                var originalEvent = events.FirstOrDefault(e => e.Id == selectedEvent!.Id);
+                if (originalEvent != null)
+                {
+                    // Update the original event object properties
+                    originalEvent.Title = editEvent.Title;
+                    originalEvent.Description = editEvent.Description;
+                    originalEvent.Location = editEvent.Location;
+                    originalEvent.StartTime = editEvent.StartTime;
+                    originalEvent.EndTime = editEvent.EndTime;
+                    originalEvent.Price = editEvent.Price;
+                    originalEvent.MaxCapacity = editEvent.MaxCapacity;
+                    originalEvent.Type = editEvent.Type;
+                    originalEvent.ImageUrl = editEvent.ImageUrl;
+                    originalEvent.IsActive = editEvent.IsActive;
+                    originalEvent.UpdatedAt = DateTime.Now;
+
+                    // Update in database using the original event object
+                    await EventService.UpdateAsync(originalEvent);
+                    NotificationService.RaiseNotification("Success", $"Event '{editEvent.Title}' updated successfully");
+                }
+                else
+                {
+                    NotificationService.RaiseNotification("Error", "Event not found for updating");
+                }
+            }
+            else
+            {
+                // Add new event
+                editEvent.CreatedAt = DateTime.Now;
+                await EventService.AddAsync(editEvent);
+                events.Add(editEvent);
+                NotificationService.RaiseNotification("Success", $"Event '{editEvent.Title}' added successfully");
+            }
+
+            CloseModal();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", $"Failed to save event: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteEvent(PenangGoApp.DataAccess.Event ev)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to delete '{ev.Title}'?\n\n" +
+            $"Location: {ev.Location}\n" +
+            $"Date: {ev.StartTime.ToString("MMM dd, yyyy")}\n" +
+            $"This action cannot be undone.");
+
+        if (!confirmed)
+            return;
+
+        // Store original events list for potential rollback
+        var originalEvents = events.ToList();
+        
+        try
+        {
+            // Optimistically remove from UI
+            events.Remove(ev);
+            StateHasChanged();
+
+            await EventService.DeleteAsync(ev.Id);
+            NotificationService.RaiseNotification("Success", $"Event '{ev.Title}' deleted successfully");
+        }
+        catch (Exception ex)
+        {
+            // Revert on error
+            events = originalEvents;
+            StateHasChanged();
+            NotificationService.RaiseNotification("Error", $"Failed to delete event: {ex.Message}");
+        }
+    }
+
+    private void ViewEventDetails(PenangGoApp.DataAccess.Event ev)
+    {
+        NotificationService.RaiseNotification("Info", $"Viewing details for {ev.Title}");
+        // Navigate to event details page or show detailed modal
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = "";
+    }
+} 

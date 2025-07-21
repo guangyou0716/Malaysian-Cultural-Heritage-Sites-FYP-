@@ -1,0 +1,39 @@
+﻿@* @inject PenangGoAppFresh.Auth.AuthService AuthService
+@implements IDisposable
+
+@if (AuthService.IsLoggedIn)
+{
+    <nav class="nav flex-column">
+        <button class="nav-link" @onclick="@(() => NavigateTo("/dashboard"))">Dashboard</button>
+        <button class="nav-link" @onclick="@(() => NavigateTo("/map"))">Interactive Map</button>
+        <button class="nav-link" @onclick="@(() => NavigateTo("/events"))">Events & Updates</button>
+        <button class="nav-link" @onclick="@(() => NavigateTo("/info"))">Cultural Info</button>
+        <button class="nav-link" @onclick="@(() => NavigateTo("/panoramas"))">Panorama View</button>
+        <button class="nav-link" @onclick="@(() => NavigateTo("/booking"))">Booking & Event Management</button>
+        <button class="nav-link" @onclick="@(() => NavigateTo("/engagement"))">User Engagement</button>
+        <button class="nav-link" @onclick="@(() => NavigateTo("/profile"))">👤 Profile Settings</button>
+        <button class="nav-link" @onclick="@(() => NavigateTo("/api-test"))">API Test</button>
+        <button class="nav-link" @onclick="@(() => NavigateTo("/connectivity-test"))">🔗 Connectivity Test</button>
+        @if (AuthService.IsAdmin)
+        {
+            <button class="nav-link" @onclick="@(() => NavigateTo("/admin"))">Admin</button>
+        }
+    </nav>
+}
+
+@code {
+    [Inject] NavigationManager NavigationManager { get; set; }
+    void NavigateTo(string url) => NavigationManager.NavigateTo(url);
+    protected override void OnInitialized()
+    {
+        AuthService.AuthStateChanged += OnAuthStateChanged;
+    }
+    private void OnAuthStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
+    }
+} *@

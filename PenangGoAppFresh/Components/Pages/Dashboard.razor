@@ -1,0 +1,319 @@
+@page "/dashboard"
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject PenangGoAppFresh.Services.EventService EventService
+@inject PenangGoAppFresh.Services.HeritageSiteService HeritageSiteService
+@inject PenangGoAppFresh.Services.BookingService BookingService
+@inject PenangGoAppFresh.Services.BookmarkService BookmarkService
+@inject PenangGoAppFresh.Services.ReviewService ReviewService
+@inject NavigationManager Navigation
+
+<div class="dashboard-container fade-in">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="dashboard-title">
+                <span class="title-icon">📊</span>
+                Welcome Back, @(AuthService?.CurrentUser?.Name ?? "Explorer")!
+            </h1>
+            <p class="dashboard-subtitle">Your cultural heritage journey continues here</p>
+        </div>
+    </div>
+
+@if (AuthService == null || !AuthService.IsLoggedIn)
+{
+        <div class="auth-required">
+            <div class="auth-card">
+                <div class="auth-icon">🔐</div>
+                <h3>Authentication Required</h3>
+                <p>Please log in to access your personalized dashboard.</p>
+                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/login"))">Login Now</button>
+            </div>
+        </div>
+}
+else if (AuthService.CurrentUser == null)
+{
+        <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Loading your profile...</p>
+        </div>
+}
+else
+{
+        <!-- Quick Stats -->
+        <div class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-icon">🔖</div>
+                <div class="stat-content">
+                    <h3 class="stat-number">@(userBookmarks?.Count ?? 0)</h3>
+                    <p class="stat-label">My Bookmarks</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-content">
+                    <h3 class="stat-number">@(userBookings?.Count ?? 0)</h3>
+                    <p class="stat-label">My Bookings</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-content">
+                    <h3 class="stat-number">@(userReviews?.Count ?? 0)</h3>
+                    <p class="stat-label">My Reviews</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-content">
+                    <h3 class="stat-number">@GetBadgeCount()</h3>
+                    <p class="stat-label">Badges Earned</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="dashboard-grid">
+            <!-- Quick Actions -->
+            <div class="dashboard-card quick-actions-card">
+                <div class="card-header">
+                    <div class="card-icon">⚡</div>
+                    <h3 class="card-title">Quick Actions</h3>
+                </div>
+                <div class="card-body">
+                    <div class="actions-grid">
+                        <div class="action-item clickable" @onclick="@(() => Navigation.NavigateTo("/map"))">
+                            <div class="action-icon">🗺️</div>
+                            <span>Explore Map</span>
+                        </div>
+                        <div class="action-item clickable" @onclick="@(() => Navigation.NavigateTo("/events"))">
+                            <div class="action-icon">🎉</div>
+                            <span>Find Events</span>
+                        </div>
+                        <div class="action-item clickable" @onclick="@(() => Navigation.NavigateTo("/mybookmarks"))">
+                            <div class="action-icon">🔖</div>
+                            <span>My Bookmarks</span>
+                        </div>
+                        <div class="action-item clickable" @onclick="@(() => Navigation.NavigateTo("/booking"))">
+                            <div class="action-icon">📅</div>
+                            <span>My Bookings</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Events -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon">🎉</div>
+                    <h3 class="card-title">Upcoming Events</h3>
+                </div>
+                <div class="card-body">
+                @if (events == null)
+                {
+                        <div class="loading-state">
+                            <div class="loading-spinner"></div>
+                            <p>Loading events...</p>
+                        </div>
+                }
+                else if (events.Count == 0)
+                {
+                        <div class="empty-state">
+                            <div class="empty-icon">📅</div>
+                            <p>No upcoming events</p>
+                            <small>Check back later for new cultural events</small>
+                        </div>
+                }
+                else
+                {
+                        <div class="events-list">
+                            @foreach (var ev in events.Take(5))
+                        {
+                                <div class="event-item clickable" @onclick="@(() => Navigation.NavigateTo("/events"))">
+                                    <div class="event-date">
+                                        <div class="date-day">@ev.StartTime.ToString("dd")</div>
+                                        <div class="date-month">@ev.StartTime.ToString("MMM")</div>
+                                    </div>
+                                    <div class="event-info">
+                                        <h4>@ev.Title</h4>
+                                        <p>@ev.Location</p>
+                                    </div>
+                                    <div class="event-arrow">→</div>
+                                </div>
+                        }
+                        </div>
+                }
+            </div>
+        </div>
+
+            <!-- Featured Heritage Sites -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon">🏛️</div>
+                    <h3 class="card-title">Featured Heritage Sites</h3>
+                </div>
+                <div class="card-body">
+                @if (sites == null)
+                {
+                        <div class="loading-state">
+                            <div class="loading-spinner"></div>
+                            <p>Loading sites...</p>
+                        </div>
+                }
+                else if (sites.Count == 0)
+                {
+                        <div class="empty-state">
+                            <div class="empty-icon">🏛️</div>
+                            <p>No sites found</p>
+                            <small>Heritage sites will appear here</small>
+                        </div>
+                }
+                else
+                {
+                        <div class="sites-list">
+                            @foreach (var site in sites.Take(4))
+                        {
+                                <div class="site-item clickable" @onclick="@(() => Navigation.NavigateTo($"/site/{site.Id}"))">
+                                    <div class="site-icon">🏛️</div>
+                                    <div class="site-info">
+                                        <h4>@site.Name</h4>
+                                        <p>@(string.IsNullOrEmpty(site.Description) ? "No description available" : site.Description.Substring(0, Math.Min(50, site.Description.Length)) + "...")</p>
+                                    </div>
+                                    <div class="site-arrow">→</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon">📈</div>
+                    <h3 class="card-title">Recent Activity</h3>
+                </div>
+                <div class="card-body">
+                    <div class="activity-list">
+                        @if (userBookmarks?.Count > 0)
+                        {
+                            var latestBookmark = userBookmarks.OrderByDescending(b => b.CreatedAt).First();
+                            <div class="activity-item">
+                                <div class="activity-icon">🔖</div>
+                                <div class="activity-content">
+                                    <p>Bookmarked <strong>@(latestBookmark.Site?.Name ?? "Unknown Site")</strong></p>
+                                    <small>@latestBookmark.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                </div>
+                            </div>
+                        }
+                        @if (userReviews?.Count > 0)
+                        {
+                            var latestReview = userReviews.OrderByDescending(r => r.CreatedAt).First();
+                            <div class="activity-item">
+                                <div class="activity-icon">⭐</div>
+                                <div class="activity-content">
+                                    <p>Reviewed <strong>@(latestReview.Site?.Name ?? "Unknown Site")</strong></p>
+                                    <small>@latestReview.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                </div>
+                            </div>
+                        }
+                        @if (userBookings?.Count > 0)
+                        {
+                            var latestBooking = userBookings.OrderByDescending(b => b.BookingTime).First();
+                            <div class="activity-item">
+                                <div class="activity-icon">📅</div>
+                                <div class="activity-content">
+                                    <p>Booked <strong>@(latestBooking.Event?.Title ?? "Unknown Event")</strong></p>
+                                    <small>@latestBooking.BookingTime.ToString("MMM dd, yyyy")</small>
+                                </div>
+                            </div>
+                        }
+                        @if ((userBookmarks?.Count ?? 0) == 0 && (userReviews?.Count ?? 0) == 0 && (userBookings?.Count ?? 0) == 0)
+                        {
+                            <div class="empty-state">
+                                <div class="empty-icon">📈</div>
+                                <p>No recent activity</p>
+                                <small>Start exploring to see your activity here</small>
+                            </div>
+                        }
+                    </div>
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+@code {
+    private List<PenangGoApp.DataAccess.Event>? events;
+    private List<PenangGoApp.DataAccess.HeritageSite>? sites;
+    private List<PenangGoApp.DataAccess.Bookmark>? userBookmarks;
+    private List<PenangGoApp.DataAccess.Review>? userReviews;
+    private List<PenangGoApp.DataAccess.Booking>? userBookings;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService != null && AuthService.IsLoggedIn && AuthService.CurrentUser != null)
+        {
+            try
+            {
+                // Load data with error handling
+                await LoadDashboardData();
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't crash the page
+                Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            // Load data sequentially to avoid threading issues
+            events = await EventService.GetAllAsync();
+            sites = await HeritageSiteService.GetAllAsync();
+            
+            if (AuthService?.CurrentUser != null)
+            {
+                userBookmarks = await BookmarkService.GetUserBookmarksAsync(AuthService.CurrentUser.Id);
+                userReviews = await ReviewService.GetUserReviewsAsync(AuthService.CurrentUser.Id);
+                userBookings = await BookingService.GetUserBookingsAsync(AuthService.CurrentUser.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Set empty lists on error to prevent null reference exceptions
+            events ??= new List<PenangGoApp.DataAccess.Event>();
+            sites ??= new List<PenangGoApp.DataAccess.HeritageSite>();
+            userBookmarks ??= new List<PenangGoApp.DataAccess.Bookmark>();
+            userReviews ??= new List<PenangGoApp.DataAccess.Review>();
+            userBookings ??= new List<PenangGoApp.DataAccess.Booking>();
+            
+            Console.WriteLine($"Error in LoadDashboardData: {ex.Message}");
+        }
+    }
+
+    private int GetBadgeCount()
+    {
+        try
+        {
+            int badgeCount = 0;
+            
+            // Explorer badge: Visited 5+ heritage sites
+            if (userBookmarks?.Count >= 5) badgeCount++;
+            
+            // Reviewer badge: Shared 3+ reviews
+            if (userReviews?.Count >= 3) badgeCount++;
+            
+            // Event Goer badge: Attended events
+            if (userBookings?.Count > 0) badgeCount++;
+            
+            return badgeCount;
+        }
+        catch
+        {
+            return 0; // Return 0 if there's any error
+        }
+    }
+} 

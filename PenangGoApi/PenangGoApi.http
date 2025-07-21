@@ -1,0 +1,6 @@
+@PenangGoApi_HostAddress = http://localhost:5129
+
+# GET {{PenangGoApi_HostAddress}}/weatherforecast/
+# Accept: application/json
+
+###

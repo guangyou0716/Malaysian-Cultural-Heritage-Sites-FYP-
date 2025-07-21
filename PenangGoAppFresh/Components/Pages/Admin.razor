@@ -1,0 +1,60 @@
+@page "/admin"
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+
+<h2 class="mb-4 text-center heritage-title">Admin Panel</h2>
+@if (AuthService == null || !AuthService.IsAdmin)
+{
+    <div class="heritage-alert heritage-alert-warning text-center mt-4">You do not have admin access.</div>
+}
+else
+{
+    <div class="heritage-grid gap-lg mt-4">
+        <div class="heritage-card fade-in">
+            <div class="heritage-card-body">
+                <h3 class="heritage-card-title">Admin Dashboard</h3>
+                <button class="heritage-btn heritage-btn-primary mt-2" @onclick="@(() => NavigateTo("/admindashboard"))">Go to Dashboard</button>
+            </div>
+        </div>
+        <div class="heritage-card fade-in">
+            <div class="heritage-card-body">
+                <h3 class="heritage-card-title">Manage Heritage Sites</h3>
+                <button class="heritage-btn heritage-btn-primary mt-2" @onclick="@(() => NavigateTo("/adminsites"))">Go to Sites</button>
+            </div>
+        </div>
+        <div class="heritage-card fade-in">
+            <div class="heritage-card-body">
+                <h3 class="heritage-card-title">Manage Events</h3>
+                <button class="heritage-btn heritage-btn-primary mt-2" @onclick="@(() => NavigateTo("/adminevents"))">Go to Events</button>
+            </div>
+        </div>
+        <div class="heritage-card fade-in">
+            <div class="heritage-card-body">
+                <h3 class="heritage-card-title">AR Content Management</h3>
+                <button class="heritage-btn heritage-btn-primary mt-2" @onclick="@(() => NavigateTo("/arview"))">Manage AR Content</button>
+            </div>
+        </div>
+        <div class="heritage-card fade-in">
+            <div class="heritage-card-body">
+                <h3 class="heritage-card-title">Analytics</h3>
+                <button class="heritage-btn heritage-btn-primary mt-2" @onclick="@(() => NavigateTo("/admindashboard"))">View Analytics</button>
+            </div>
+        </div>
+        <div class="heritage-card fade-in">
+            <div class="heritage-card-body">
+                <h3 class="heritage-card-title">Settings</h3>
+                <button class="heritage-btn heritage-btn-primary mt-2" @onclick="@(() => NavigateTo("/settings"))">System Settings</button>
+            </div>
+        </div>
+        <div class="heritage-card fade-in">
+            <div class="heritage-card-body">
+                <h3 class="heritage-card-title">Manage Users</h3>
+                <button class="heritage-btn heritage-btn-primary mt-2" @onclick="@(() => NavigateTo("/adminusers"))">Go to Users</button>
+            </div>
+        </div>
+    </div>
+} 
+
+@code {
+    [Inject] NavigationManager NavigationManager { get; set; }
+    void NavigateTo(string url) => NavigationManager.NavigateTo(url);
+} 
