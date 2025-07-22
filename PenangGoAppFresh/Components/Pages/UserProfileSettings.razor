@@ -2,6 +2,7 @@
 @inject PenangGoAppFresh.Auth.AuthService AuthService
 @inject PenangGoAppFresh.Services.NotificationService NotificationService
 @inject NavigationManager Navigation
+@inject PenangGoAppFresh.Services.IUserService UserService
 @using PenangGoApp.DataAccess
 
 <div class="profile-settings-container fade-in">
@@ -334,12 +335,15 @@
         isDeleting = true;
         try
         {
-            // Delete account from database
-            // await UserService.DeleteAccountAsync(profile.Id);
-            
-            // Logout user
-            await AuthService.LogoutAsync(); // Use LogoutAsync instead of Logout
-            
+            var success = await UserService.DeleteUserAsync(profile.Id);
+            if (!success)
+            {
+                NotificationService.RaiseNotification("Error", "Failed to delete account from server");
+                isDeleting = false;
+                return;
+            }
+
+            await AuthService.LogoutAsync();
             NotificationService.RaiseNotification("Success", "Account deleted successfully");
             Navigation.NavigateTo("/");
         }
