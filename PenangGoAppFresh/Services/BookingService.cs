@@ -84,7 +84,7 @@ namespace PenangGoAppFresh.Services
             return true;
         }
 
-        public async Task BookEventAsync(int userId, int eventId)
+        public async Task<Booking?> BookEventAsync(int userId, int eventId)
         {
             var booking = new Booking
             {
@@ -95,6 +95,7 @@ namespace PenangGoAppFresh.Services
             };
             _context.Bookings.Add(booking);
             await _context.SaveChangesAsync();
+            return booking;
         }
     }
 } 

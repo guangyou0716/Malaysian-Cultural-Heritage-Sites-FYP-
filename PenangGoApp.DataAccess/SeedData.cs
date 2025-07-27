@@ -137,6 +137,9 @@ public static class SeedData
             return;
         }
 
+        // Get admin user for submissions
+        var adminUser = await context.Users.FirstOrDefaultAsync(u => u.IsAdmin);
+
         var heritageSites = new List<HeritageSite>
         {
             new HeritageSite
@@ -157,10 +160,16 @@ public static class SeedData
                 ContactInfo = "+604-261 4609",
                 Website = "https://www.khookongsi.com.my",
                 IsAccessible = true,
-                PhotoGallery = "[\"/images/khoo-kongsi-1.jpg\",\"/images/khoo-kongsi-2.jpg\",\"/images/khoo-kongsi-3.jpg\"]",
+                ImageUrl = "[\"/images/khoo-kongsi-1.jpg\",\"/images/khoo-kongsi-2.jpg\",\"/images/khoo-kongsi-3.jpg\"]",
                 AverageRating = 4.5,
                 TotalReviews = 12,
-                TotalBookmarks = 8
+                TotalBookmarks = 8,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedBy = adminUser?.Id,
+                SubmittedAt = DateTime.UtcNow.AddDays(-100),
+                ApprovedBy = adminUser?.Id,
+                ApprovedAt = DateTime.UtcNow
             },
             new HeritageSite
             {
@@ -180,10 +189,16 @@ public static class SeedData
                 ContactInfo = "+604-262 0006",
                 Website = "https://www.cheongfatttzemansion.com",
                 IsAccessible = false,
-                PhotoGallery = "[\"/images/blue-mansion-1.jpg\",\"/images/blue-mansion-2.jpg\"]",
+                ImageUrl = "[\"/images/blue-mansion-1.jpg\",\"/images/blue-mansion-2.jpg\"]",
                 AverageRating = 4.8,
                 TotalReviews = 15,
-                TotalBookmarks = 12
+                TotalBookmarks = 12,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedBy = adminUser?.Id,
+                SubmittedAt = DateTime.UtcNow.AddDays(-95),
+                ApprovedBy = adminUser?.Id,
+                ApprovedAt = DateTime.UtcNow
             },
             new HeritageSite
             {
@@ -203,10 +218,16 @@ public static class SeedData
                 ContactInfo = "+604-261 4217",
                 Website = "",
                 IsAccessible = true,
-                PhotoGallery = "[\"/images/kapitan-keling-1.jpg\",\"/images/kapitan-keling-2.jpg\"]",
+                ImageUrl = "[\"/images/kapitan-keling-1.jpg\",\"/images/kapitan-keling-2.jpg\"]",
                 AverageRating = 4.2,
                 TotalReviews = 8,
-                TotalBookmarks = 5
+                TotalBookmarks = 5,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedBy = adminUser?.Id,
+                SubmittedAt = DateTime.UtcNow.AddDays(-90),
+                ApprovedBy = adminUser?.Id,
+                ApprovedAt = DateTime.UtcNow
             },
             new HeritageSite
             {
@@ -226,10 +247,16 @@ public static class SeedData
                 ContactInfo = "+604-261 4628",
                 Website = "",
                 IsAccessible = true,
-                PhotoGallery = "[\"/images/sri-mahamariamman-1.jpg\",\"/images/sri-mahamariamman-2.jpg\"]",
+                ImageUrl = "[\"/images/sri-mahamariamman-1.jpg\",\"/images/sri-mahamariamman-2.jpg\"]",
                 AverageRating = 4.0,
                 TotalReviews = 6,
-                TotalBookmarks = 3
+                TotalBookmarks = 3,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedBy = adminUser?.Id,
+                SubmittedAt = DateTime.UtcNow.AddDays(-85),
+                ApprovedBy = adminUser?.Id,
+                ApprovedAt = DateTime.UtcNow
             },
             new HeritageSite
             {
@@ -249,10 +276,16 @@ public static class SeedData
                 ContactInfo = "+604-264 2929",
                 Website = "https://www.pinangperanakanmansion.com.my",
                 IsAccessible = true,
-                PhotoGallery = "[\"/images/peranakan-mansion-1.jpg\",\"/images/peranakan-mansion-2.jpg\",\"/images/peranakan-mansion-3.jpg\"]",
+                ImageUrl = "[\"/images/peranakan-mansion-1.jpg\",\"/images/peranakan-mansion-2.jpg\",\"/images/peranakan-mansion-3.jpg\"]",
                 AverageRating = 4.6,
                 TotalReviews = 18,
-                TotalBookmarks = 14
+                TotalBookmarks = 14,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedBy = adminUser?.Id,
+                SubmittedAt = DateTime.UtcNow.AddDays(-80),
+                ApprovedBy = adminUser?.Id,
+                ApprovedAt = DateTime.UtcNow
             },
             new HeritageSite
             {
@@ -272,10 +305,16 @@ public static class SeedData
                 ContactInfo = "+604-261 0262",
                 Website = "",
                 IsAccessible = true,
-                PhotoGallery = "[\"/images/fort-cornwallis-1.jpg\",\"/images/fort-cornwallis-2.jpg\"]",
+                ImageUrl = "[\"/images/fort-cornwallis-1.jpg\",\"/images/fort-cornwallis-2.jpg\"]",
                 AverageRating = 3.8,
                 TotalReviews = 10,
-                TotalBookmarks = 7
+                TotalBookmarks = 7,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedBy = adminUser?.Id,
+                SubmittedAt = DateTime.UtcNow.AddDays(-75),
+                ApprovedBy = adminUser?.Id,
+                ApprovedAt = DateTime.UtcNow
             },
             new HeritageSite
             {
@@ -295,10 +334,16 @@ public static class SeedData
                 ContactInfo = "",
                 Website = "",
                 IsAccessible = true,
-                PhotoGallery = "[\"/images/gurney-drive-1.jpg\",\"/images/gurney-drive-2.jpg\"]",
+                ImageUrl = "[\"/images/gurney-drive-1.jpg\",\"/images/gurney-drive-2.jpg\"]",
                 AverageRating = 4.3,
                 TotalReviews = 22,
-                TotalBookmarks = 16
+                TotalBookmarks = 16,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedBy = adminUser?.Id,
+                SubmittedAt = DateTime.UtcNow.AddDays(-70),
+                ApprovedBy = adminUser?.Id,
+                ApprovedAt = DateTime.UtcNow
             },
             new HeritageSite
             {
@@ -318,10 +363,16 @@ public static class SeedData
                 ContactInfo = "+604-828 8880",
                 Website = "https://www.penanghill.gov.my",
                 IsAccessible = true,
-                PhotoGallery = "[\"/images/penang-hill-1.jpg\",\"/images/penang-hill-2.jpg\",\"/images/penang-hill-3.jpg\"]",
+                ImageUrl = "[\"/images/penang-hill-1.jpg\",\"/images/penang-hill-2.jpg\",\"/images/penang-hill-3.jpg\"]",
                 AverageRating = 4.7,
                 TotalReviews = 25,
-                TotalBookmarks = 20
+                TotalBookmarks = 20,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedBy = adminUser?.Id,
+                SubmittedAt = DateTime.UtcNow.AddDays(-65),
+                ApprovedBy = adminUser?.Id,
+                ApprovedAt = DateTime.UtcNow
             }
         };
 
@@ -415,7 +466,7 @@ public static class SeedData
                 ImageUrl = "/images/events/thaipusam-festival.jpg",
                 CreatedAt = DateTime.UtcNow.AddDays(-4),
                 Type = "Festival",
-                Icon = "��️",
+                Icon = "🕉️",
                 Gradient = "linear-gradient(135deg, #9B59B6, #8E44AD)",
                 IsPopular = true,
                 IsNew = false
@@ -476,31 +527,66 @@ public static class SeedData
                 Title = "Komtar Tower Street View",
                 Description = "Panorama of Komtar Tower, Penang.",
                 PanoramaUrl = "https://www.google.com/maps/embed?pb=!4v1718199999999!6m8!1m7!1sCAoSLEFGMVFpcE1wZ2ZyQ2d6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6!2m2!1d5.4141!2d100.3288!3f0!4f0!5f0.7820865974627469",
-                HeritageSiteId = khooKongsi?.Id ?? 0, UploadedBy = adminUser.Id, UploadedAt = DateTime.UtcNow
+                HeritageSiteId = khooKongsi?.Id ?? 0, 
+                UploadedBy = adminUser.Id, 
+                UploadedAt = DateTime.UtcNow,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedAt = DateTime.UtcNow,
+                ApprovedBy = adminUser.Id,
+                ApprovedAt = DateTime.UtcNow
             },
             new PanoramaContent {
                 Title = "Cheong Fatt Tze Mansion Street View",
                 Description = "Panorama of Cheong Fatt Tze Mansion, Penang.",
                 PanoramaUrl = "https://www.google.com/maps/embed?pb=!4v1718199999999!6m8!1m7!1sCAoSLEFGMVFpcE1wZ2ZyQ2d6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6!2m2!1d5.4214!2d100.3412!3f0!4f0!5f0.7820865974627469",
-                HeritageSiteId = blueMansion?.Id ?? 0, UploadedBy = adminUser.Id, UploadedAt = DateTime.UtcNow
+                HeritageSiteId = blueMansion?.Id ?? 0, 
+                UploadedBy = adminUser.Id, 
+                UploadedAt = DateTime.UtcNow,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedAt = DateTime.UtcNow,
+                ApprovedBy = adminUser.Id,
+                ApprovedAt = DateTime.UtcNow
             },
             new PanoramaContent {
                 Title = "Pinang Peranakan Mansion Street View",
                 Description = "Panorama of Pinang Peranakan Mansion, Penang.",
                 PanoramaUrl = "https://www.google.com/maps/embed?pb=!4v1718199999999!6m8!1m7!1sCAoSLEFGMVFpcE1wZ2ZyQ2d6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6!2m2!1d5.4208!2d100.3418!3f0!4f0!5f0.7820865974627469",
-                HeritageSiteId = peranakanMansion?.Id ?? 0, UploadedBy = adminUser.Id, UploadedAt = DateTime.UtcNow
+                HeritageSiteId = peranakanMansion?.Id ?? 0, 
+                UploadedBy = adminUser.Id, 
+                UploadedAt = DateTime.UtcNow,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedAt = DateTime.UtcNow,
+                ApprovedBy = adminUser.Id,
+                ApprovedAt = DateTime.UtcNow
             },
             new PanoramaContent {
                 Title = "Fort Cornwallis Street View",
                 Description = "Panorama of Fort Cornwallis, Penang.",
                 PanoramaUrl = "https://www.google.com/maps/embed?pb=!4v1718199999999!6m8!1m7!1sCAoSLEFGMVFpcE1wZ2ZyQ2d6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6!2m2!1d5.4219!2d100.3447!3f0!4f0!5f0.7820865974627469",
-                HeritageSiteId = fortCornwallis?.Id ?? 0, UploadedBy = adminUser.Id, UploadedAt = DateTime.UtcNow
+                HeritageSiteId = fortCornwallis?.Id ?? 0, 
+                UploadedBy = adminUser.Id, 
+                UploadedAt = DateTime.UtcNow,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedAt = DateTime.UtcNow,
+                ApprovedBy = adminUser.Id,
+                ApprovedAt = DateTime.UtcNow
             },
             new PanoramaContent {
                 Title = "Penang Hill Railway Journey Street View",
                 Description = "Panorama of Penang Hill funicular railway journey, Penang.",
                 PanoramaUrl = "https://www.google.com/maps/embed?pb=!4v1718199999999!6m8!1m7!1sCAoSLEFGMVFpcE1wZ2ZyQ2d6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6!2m2!1d5.4211!2d100.2756!3f0!4f0!5f0.7820865974627469",
-                HeritageSiteId = penangHill?.Id ?? 0, UploadedBy = adminUser.Id, UploadedAt = DateTime.UtcNow
+                HeritageSiteId = penangHill?.Id ?? 0, 
+                UploadedBy = adminUser.Id, 
+                UploadedAt = DateTime.UtcNow,
+                // Approval system fields for admin-created content
+                ApprovalStatus = ApprovalStatus.Approved,
+                SubmittedAt = DateTime.UtcNow,
+                ApprovedBy = adminUser.Id,
+                ApprovedAt = DateTime.UtcNow
             }
         };
         context.PanoramaContents.AddRange(panoramaContents);

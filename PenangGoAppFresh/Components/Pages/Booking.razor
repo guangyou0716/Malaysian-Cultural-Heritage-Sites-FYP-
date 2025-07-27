@@ -1,5 +1,5 @@
 @page "/booking"
-@inject PenangGoAppFresh.Services.BookingService BookingService
+@inject PenangGoAppFresh.Services.IApiBookingService BookingService
 @inject PenangGoAppFresh.Auth.AuthService AuthService
 @inject PenangGoAppFresh.Services.NotificationService NotificationService
 @inject NavigationManager Navigation
@@ -179,7 +179,27 @@
 
     private async Task CancelBooking(int bookingId)
     {
-        // TODO: Implement booking cancellation
-        NotificationService.RaiseNotification("Cancellation", "Booking cancellation feature coming soon!");
+        try
+        {
+            var success = await BookingService.UpdateBookingStatusAsync(bookingId, PenangGoApp.DataAccess.BookingStatus.Cancelled);
+            if (success)
+            {
+                NotificationService.RaiseNotification("Success", "Booking cancelled successfully!");
+                // Refresh the bookings list
+                if (AuthService != null && AuthService.IsLoggedIn && AuthService.CurrentUser != null)
+                {
+                    bookings = await BookingService.GetUserBookingsAsync(AuthService.CurrentUser.Id);
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                NotificationService.RaiseNotification("Error", "Failed to cancel booking. Please try again.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", $"Failed to cancel booking: {ex.Message}");
+        }
     }
 } 

@@ -41,20 +41,6 @@
             <p>Loading heritage sites...</p>
         </div>
     }
-    else if (sites.Count == 0)
-    {
-        <div class="empty-state-section">
-            <div class="empty-state-card">
-                <div class="empty-icon">🏛️</div>
-                <h3>No Heritage Sites Found</h3>
-                <p>There are no heritage sites in the system yet.</p>
-                <button class="btn btn-primary" @onclick="ShowAddModal">
-                    <span class="btn-icon">➕</span>
-                    Add First Site
-                </button>
-            </div>
-        </div>
-    }
     else
     {
         <div class="sites-content">
@@ -70,8 +56,15 @@
                 <div class="stat-card">
                     <div class="stat-icon">✅</div>
                     <div class="stat-info">
-                        <span class="stat-number">@sites.Count(s => s.IsActive)</span>
+                        <span class="stat-number">@sites.Count(s => s.IsActive && s.ApprovalStatus == ApprovalStatus.Approved)</span>
                         <span class="stat-label">Active Sites</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-info">
+                        <span class="stat-number">@sites.Count(s => s.ApprovalStatus == ApprovalStatus.Pending)</span>
+                        <span class="stat-label">Pending Approval</span>
                     </div>
                 </div>
                 <div class="stat-card">
@@ -81,13 +74,6 @@
                         <span class="stat-label">With Panoramas</span>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⭐</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@sites.Average(s => s.AverageRating).ToString("F1")</span>
-                        <span class="stat-label">Avg Rating</span>
-                    </div>
-                </div>
             </div>
 
             <!-- Action Bar -->
@@ -95,8 +81,16 @@
                 <div class="search-section">
                     <input type="text" class="form-control" placeholder="Search sites..." @bind="searchTerm" />
                 </div>
+                <div class="filter-section">
+                    <select class="form-control" @bind="statusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="@ApprovalStatus.Approved">Approved</option>
+                        <option value="@ApprovalStatus.Pending">Pending</option>
+                        <option value="@ApprovalStatus.Rejected">Rejected</option>
+                    </select>
+                </div>
                 <div class="action-buttons">
-                    <button class="btn btn-outline" @onclick="ClearSearch">
+                    <button class="btn btn-outline" @onclick="ClearFilters">
                         <span class="btn-icon">🔄</span>
                         Clear
                     </button>
@@ -114,7 +108,15 @@
                     <div class="site-card fade-in">
                         <div class="site-header">
                             <div class="site-status-badges">
-                                @if (site.IsActive)
+                                @if (site.ApprovalStatus == ApprovalStatus.Pending)
+                                {
+                                    <span class="status-badge status-pending">Pending Approval</span>
+                                }
+                                else if (site.ApprovalStatus == ApprovalStatus.Rejected)
+                                {
+                                    <span class="status-badge status-rejected">Rejected</span>
+                                }
+                                else if (site.IsActive)
                                 {
                                     <span class="status-badge status-active">Active</span>
                                 }
@@ -136,6 +138,21 @@
                                 <div class="site-description">
                                     @(site.Description.Length > 150 ? site.Description.Substring(0, 150) + "..." : site.Description)
                                 </div>
+                                
+                                @if (site.ApprovalStatus == ApprovalStatus.Pending)
+                                {
+                                    <div class="submission-info">
+                                        <div class="submitter-info">
+                                            <span class="submitter-icon">👤</span>
+                                            <span class="submitter-name">Submitted by: @(site.Submitter?.Name ?? "Unknown User")</span>
+                                        </div>
+                                        <div class="submission-date">
+                                            <span class="date-icon">📅</span>
+                                            <span class="date-text">Submitted: @site.SubmittedAt?.ToString("MMM dd, yyyy HH:mm")</span>
+                                        </div>
+                                    </div>
+                                }
+                                
                                 <div class="site-details">
                                     <div class="detail-item">
                                         <span class="detail-icon">📅</span>
@@ -163,14 +180,32 @@
                             </div>
                             
                             <div class="site-actions">
-                                <button class="btn btn-sm btn-warning" @onclick="@(() => EditSite(site))" @onclick:stopPropagation="true">
-                                    <span class="btn-icon">✏️</span>
-                                    Edit
-                                </button>
-                                <button class="btn btn-sm btn-danger" @onclick="@(() => DeleteSite(site))" @onclick:stopPropagation="true">
-                                    <span class="btn-icon">🗑️</span>
-                                    Delete
-                                </button>
+                                @if (site.ApprovalStatus == ApprovalStatus.Pending)
+                                {
+                                    <button class="btn btn-sm btn-info" @onclick="@(() => ViewSiteDetails(site))" @onclick:stopPropagation="true">
+                                        <span class="btn-icon">👁️</span>
+                                        View Details
+                                    </button>
+                                    <button class="btn btn-sm btn-success" @onclick="@(() => ApproveSite(site))" @onclick:stopPropagation="true">
+                                        <span class="btn-icon">✅</span>
+                                        Approve
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" @onclick="@(() => RejectSite(site))" @onclick:stopPropagation="true">
+                                        <span class="btn-icon">❌</span>
+                                        Reject
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-warning" @onclick="@(() => EditSite(site))" @onclick:stopPropagation="true">
+                                        <span class="btn-icon">✏️</span>
+                                        Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" @onclick="@(() => DeleteSite(site))" @onclick:stopPropagation="true">
+                                        <span class="btn-icon">🗑️</span>
+                                        Delete
+                                    </button>
+                                }
                             </div>
                         </div>
                     </div>
@@ -255,10 +290,213 @@
     </div>
 }
 
+<!-- Site Details Modal -->
+@if (showDetailsModal)
+{
+    <div class="modal-overlay" @onclick="CloseDetailsModal">
+        <div class="modal-content details-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>Site Details: @selectedSite?.Name</h3>
+                <button class="modal-close" @onclick="CloseDetailsModal">×</button>
+            </div>
+            <div class="modal-body">
+                @if (selectedSite != null)
+                {
+                    <div class="details-section">
+                        <h4 class="section-title">
+                            <span class="section-icon">📋</span>
+                            Basic Information
+                        </h4>
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <label>Site Name:</label>
+                                <span>@selectedSite.Name</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Location:</label>
+                                <span>@selectedSite.Location</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Category:</label>
+                                <span>@(selectedSite.Category ?? "Not specified")</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Historical Period:</label>
+                                <span>@(selectedSite.HistoricalPeriod ?? "Not specified")</span>
+                            </div>
+                            <div class="detail-item full-width">
+                                <label>Description:</label>
+                                <span>@selectedSite.Description</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="details-section">
+                        <h4 class="section-title">
+                            <span class="section-icon">📍</span>
+                            Location Details
+                        </h4>
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <label>Latitude:</label>
+                                <span>@selectedSite.Latitude.ToString("F6")</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Longitude:</label>
+                                <span>@selectedSite.Longitude.ToString("F6")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="details-section">
+                        <h4 class="section-title">
+                            <span class="section-icon">🏷️</span>
+                            Additional Information
+                        </h4>
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <label>Cultural Significance:</label>
+                                <span>@(selectedSite.CulturalSignificance ?? "Not specified")</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Visiting Hours:</label>
+                                <span>@(selectedSite.VisitingHours ?? "Not specified")</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Entry Fee:</label>
+                                <span>@(selectedSite.EntryFee ?? "Not specified")</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Contact Information:</label>
+                                <span>@(selectedSite.ContactInfo ?? "Not specified")</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Website:</label>
+                                <span>@(selectedSite.Website ?? "Not specified")</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Image URL:</label>
+                                <span>@(selectedSite.ImageUrl ?? "Not specified")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="details-section">
+                        <h4 class="section-title">
+                            <span class="section-icon">📊</span>
+                            Statistics
+                        </h4>
+                        <div class="details-grid">
+                            <div class="detail-item">
+                                <label>Average Rating:</label>
+                                <span>@selectedSite.AverageRating.ToString("F1") stars</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Total Reviews:</label>
+                                <span>@selectedSite.TotalReviews</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Total Bookmarks:</label>
+                                <span>@selectedSite.TotalBookmarks</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Has Panorama Content:</label>
+                                <span>@(selectedSite.HasPanoramaContent ? "Yes" : "No")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (selectedSite.ApprovalStatus == ApprovalStatus.Pending)
+                    {
+                        <div class="details-section">
+                            <h4 class="section-title">
+                                <span class="section-icon">👤</span>
+                                Submission Information
+                            </h4>
+                            <div class="details-grid">
+                                <div class="detail-item">
+                                    <label>Submitted By:</label>
+                                    <span>@(selectedSite.Submitter?.Name ?? "Unknown User")</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Submitted At:</label>
+                                    <span>@selectedSite.SubmittedAt?.ToString("MMM dd, yyyy HH:mm")</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Current Status:</label>
+                                    <span class="status-badge status-pending">Pending Approval</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else if (selectedSite.ApprovalStatus == ApprovalStatus.Rejected)
+                    {
+                        <div class="details-section">
+                            <h4 class="section-title">
+                                <span class="section-icon">❌</span>
+                                Rejection Information
+                            </h4>
+                            <div class="details-grid">
+                                <div class="detail-item">
+                                    <label>Rejected By:</label>
+                                    <span>@(selectedSite.Approver?.Name ?? "Unknown Admin")</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Rejected At:</label>
+                                    <span>@selectedSite.ApprovedAt?.ToString("MMM dd, yyyy HH:mm")</span>
+                                </div>
+                                <div class="detail-item full-width">
+                                    <label>Rejection Reason:</label>
+                                    <span>@(selectedSite.ApprovalNotes ?? "No reason provided")</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else if (selectedSite.ApprovalStatus == ApprovalStatus.Approved)
+                    {
+                        <div class="details-section">
+                            <h4 class="section-title">
+                                <span class="section-icon">✅</span>
+                                Approval Information
+                            </h4>
+                            <div class="details-grid">
+                                <div class="detail-item">
+                                    <label>Approved By:</label>
+                                    <span>@(selectedSite.Approver?.Name ?? "Unknown Admin")</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Approved At:</label>
+                                    <span>@selectedSite.ApprovedAt?.ToString("MMM dd, yyyy HH:mm")</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="CloseDetailsModal">Close</button>
+                @if (selectedSite?.ApprovalStatus == ApprovalStatus.Pending)
+                {
+                    <button class="btn btn-success" @onclick="@(() => ApproveSite(selectedSite))">
+                        <span class="btn-icon">✅</span>
+                        Approve Site
+                    </button>
+                    <button class="btn btn-danger" @onclick="@(() => RejectSite(selectedSite))">
+                        <span class="btn-icon">❌</span>
+                        Reject Site
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<PenangGoApp.DataAccess.HeritageSite> sites;
     private string searchTerm = "";
+    private ApprovalStatus? statusFilter;
     private bool showModal = false;
+    private bool showDetailsModal = false;
     private bool isEditing = false;
     private bool isSaving = false;
     private PenangGoApp.DataAccess.HeritageSite? selectedSite;
@@ -291,6 +529,11 @@
         {
             var filtered = sites.AsEnumerable();
 
+            if (statusFilter.HasValue)
+            {
+                filtered = filtered.Where(s => s.ApprovalStatus == statusFilter.Value);
+            }
+
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 filtered = filtered.Where(s => 
@@ -300,7 +543,8 @@
                     (s.Category?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true));
             }
 
-            return filtered.OrderBy(s => s.Name);
+            return filtered.OrderByDescending(s => s.ApprovalStatus == ApprovalStatus.Pending)
+                         .ThenBy(s => s.Name);
         }
     }
 
@@ -311,6 +555,7 @@
         editSite = new PenangGoApp.DataAccess.HeritageSite
         {
             IsActive = true,
+            ApprovalStatus = ApprovalStatus.Approved, // Admin-created sites are auto-approved
             CreatedAt = DateTime.Now
         };
         showModal = true;
@@ -332,9 +577,16 @@
             HistoricalPeriod = site.HistoricalPeriod,
             ImageUrl = site.ImageUrl,
             IsActive = site.IsActive,
+            ApprovalStatus = site.ApprovalStatus,
             CreatedAt = site.CreatedAt
         };
         showModal = true;
+    }
+
+    private void ViewSiteDetails(PenangGoApp.DataAccess.HeritageSite site)
+    {
+        selectedSite = site;
+        showDetailsModal = true;
     }
 
     private void CloseModal()
@@ -342,6 +594,12 @@
         showModal = false;
         selectedSite = null;
         editSite = new();
+    }
+
+    private void CloseDetailsModal()
+    {
+        showDetailsModal = false;
+        selectedSite = null;
     }
 
     private async Task SaveSite()
@@ -402,6 +660,52 @@
         }
     }
 
+    private async Task ApproveSite(PenangGoApp.DataAccess.HeritageSite site)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to approve '{site.Name}'?\n\n" +
+            $"Location: {site.Location}\n" +
+            $"Submitted by: {site.Submitter?.Name ?? "Unknown User"}");
+
+        if (!confirmed) return;
+
+        try
+        {
+            await HeritageSiteService.ApproveSiteAsync(site.Id);
+            NotificationService.RaiseNotification("Success", $"Site '{site.Name}' approved successfully");
+            await LoadSites();
+            StateHasChanged();
+            CloseDetailsModal();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", $"Failed to approve site: {ex.Message}");
+        }
+    }
+
+    private async Task RejectSite(PenangGoApp.DataAccess.HeritageSite site)
+    {
+        var reason = await JSRuntime.InvokeAsync<string>("prompt", 
+            $"Please provide a reason for rejecting '{site.Name}':\n\n" +
+            $"Location: {site.Location}\n" +
+            $"Submitted by: {site.Submitter?.Name ?? "Unknown User"}");
+
+        if (reason == null) return; // User cancelled
+
+        try
+        {
+            await HeritageSiteService.RejectSiteAsync(site.Id, reason);
+            NotificationService.RaiseNotification("Success", $"Site '{site.Name}' rejected successfully");
+            await LoadSites();
+            StateHasChanged();
+            CloseDetailsModal();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", $"Failed to reject site: {ex.Message}");
+        }
+    }
+
     private async Task DeleteSite(PenangGoApp.DataAccess.HeritageSite site)
     {
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
@@ -431,14 +735,9 @@
         }
     }
 
-    private void ViewSiteDetails(PenangGoApp.DataAccess.HeritageSite site)
-    {
-        NotificationService.RaiseNotification("Info", $"Viewing details for {site.Name}");
-        // Navigate to site details page or show detailed modal
-    }
-
-    private void ClearSearch()
+    private void ClearFilters()
     {
         searchTerm = "";
+        statusFilter = null;
     }
 } 

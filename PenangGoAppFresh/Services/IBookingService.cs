@@ -11,6 +11,6 @@ namespace PenangGoAppFresh.Services
         Task<Booking?> UpdateBookingAsync(Booking booking);
         Task<bool> UpdateBookingStatusAsync(int bookingId, BookingStatus status);
         Task<bool> DeleteBookingAsync(int id);
-        Task BookEventAsync(int userId, int eventId);
+        Task<Booking?> BookEventAsync(int userId, int eventId);
     }
 } 

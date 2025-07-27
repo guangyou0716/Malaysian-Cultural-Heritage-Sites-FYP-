@@ -1,0 +1,247 @@
+.booking-success-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.success-card {
+    background: white;
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+    animation: slideUp 0.6s ease-out;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+    animation: scaleIn 0.8s ease-out 0.3s both;
+}
+
+.checkmark {
+    color: white;
+    font-size: 2.5rem;
+    font-weight: bold;
+}
+
+.success-title {
+    color: #333;
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    animation: fadeInUp 0.6s ease-out 0.4s both;
+}
+
+.success-message {
+    color: #666;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    animation: fadeInUp 0.6s ease-out 0.5s both;
+}
+
+.payment-thanks {
+    color: #28a745;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    text-align: center;
+    animation: fadeInUp 0.6s ease-out 0.6s both;
+}
+
+.booking-details {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    text-align: left;
+    animation: fadeInUp 0.6s ease-out 0.7s both;
+}
+
+.booking-details h3 {
+    color: #333;
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: #666;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.detail-value {
+    color: #333;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.price-value {
+    color: #28a745;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.success-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    animation: fadeInUp 0.6s ease-out 0.8s both;
+}
+
+.btn {
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-outline {
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn-outline:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+}
+
+/* Animations */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .booking-success-container {
+        padding: 1rem;
+    }
+    
+    .success-card {
+        padding: 2rem;
+    }
+    
+    .success-title {
+        font-size: 1.5rem;
+    }
+    
+    .success-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .success-card {
+        background: #2d3748;
+        color: white;
+    }
+    
+    .success-title {
+        color: white;
+    }
+    
+    .success-message {
+        color: #cbd5e0;
+    }
+    
+    .booking-details {
+        background: #4a5568;
+    }
+    
+    .detail-label {
+        color: #cbd5e0;
+    }
+    
+    .detail-value {
+        color: white;
+    }
+    
+    .payment-thanks {
+        color: #4caf50;
+    }
+} 

@@ -24,8 +24,6 @@ namespace PenangGoApp.DataAccess
         
         public string? ImageUrl { get; set; }
         
-        public string? ARModelUrl { get; set; }
-        
         public bool HasPanoramaContent { get; set; } = false;
         
         public bool IsActive { get; set; } = true;
@@ -33,6 +31,19 @@ namespace PenangGoApp.DataAccess
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         public DateTime? UpdatedAt { get; set; }
+        
+        // Approval system fields
+        public ApprovalStatus ApprovalStatus { get; set; } = ApprovalStatus.Approved; // Default to approved for admin-created sites
+        
+        public int? SubmittedBy { get; set; } // User who submitted the site
+        
+        public DateTime? SubmittedAt { get; set; } // When the site was submitted
+        
+        public int? ApprovedBy { get; set; } // Admin who approved/rejected the site
+        
+        public DateTime? ApprovedAt { get; set; } // When the site was approved/rejected
+        
+        public string? ApprovalNotes { get; set; } // Admin notes for approval/rejection
         
         // Additional properties for enhanced functionality
         public string? Category { get; set; } // e.g., "Temple", "Mosque", "Mansion", "Fort"
@@ -51,8 +62,6 @@ namespace PenangGoApp.DataAccess
         
         public bool IsAccessible { get; set; } = true; // Accessibility information
         
-        public string? PhotoGallery { get; set; } // JSON array of photo URLs
-        
         public double AverageRating { get; set; } = 0.0; // Calculated average rating
         
         public int TotalReviews { get; set; } = 0; // Total number of reviews
@@ -63,5 +72,19 @@ namespace PenangGoApp.DataAccess
         public virtual ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
         public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
         public virtual ICollection<PanoramaContent> PanoramaContents { get; set; } = new List<PanoramaContent>();
+        
+        // Navigation properties for approval system
+        [ForeignKey("SubmittedBy")]
+        public virtual User? Submitter { get; set; }
+        
+        [ForeignKey("ApprovedBy")]
+        public virtual User? Approver { get; set; }
+    }
+    
+    public enum ApprovalStatus
+    {
+        Pending = 0,
+        Approved = 1,
+        Rejected = 2
     }
 }

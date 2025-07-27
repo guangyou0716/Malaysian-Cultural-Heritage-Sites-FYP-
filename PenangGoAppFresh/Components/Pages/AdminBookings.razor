@@ -1,8 +1,10 @@
 @page "/adminbookings"
+@using Microsoft.JSInterop
 @inject PenangGoAppFresh.Auth.AuthService AuthService
-@inject PenangGoAppFresh.Services.IBookingService BookingService
+@inject PenangGoAppFresh.Services.IApiBookingService BookingService
 @inject PenangGoAppFresh.Services.NotificationService NotificationService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 <div class="admin-bookings-container fade-in">
     <!-- Header Section -->
@@ -101,65 +103,56 @@
                 </div>
             </div>
 
-            <!-- Bookings Grid -->
-            <div class="bookings-grid">
-                @foreach (var booking in filteredBookings)
+            <!-- Event Groups View -->
+            <div class="event-groups">
+                @foreach (var eventGroup in eventGroups)
                 {
-                    <div class="booking-card fade-in">
-                        <div class="booking-header">
-                            <div class="booking-status-badge @GetStatusClass(booking.Status)">
-                                @GetStatusIcon(booking.Status) @booking.Status.ToString()
+                    <div class="event-group-card fade-in">
+                        <div class="event-group-header">
+                            <div class="event-info">
+                                <h3 class="event-title">@eventGroup.EventTitle</h3>
+                                <div class="event-meta">
+                                    <span class="event-date">@eventGroup.EventDate.ToString("MMM dd, yyyy HH:mm")</span>
+                                    <span class="event-location">📍 @eventGroup.EventLocation</span>
+                                    <span class="event-price">💰 RM @eventGroup.EventPrice?.ToString("F2")</span>
+                                </div>
                             </div>
-                            <div class="booking-id">#@booking.Id</div>
+                            <div class="event-stats">
+                                <span class="stat-badge">@eventGroup.Bookings.Count bookings</span>
+                                <span class="stat-badge confirmed">@eventGroup.Bookings.Count(b => b.Status == BookingStatus.Confirmed) confirmed</span>
+                                <span class="stat-badge pending">@eventGroup.Bookings.Count(b => b.Status == BookingStatus.Pending) pending</span>
+                            </div>
                         </div>
                         
-                        <div class="booking-body">
-                            <div class="booking-info">
-                                <h3 class="event-title">@(booking.Event?.Title ?? "Unknown Event")</h3>
-                                <div class="user-info">
-                                    <span class="user-icon">👤</span>
-                                    <span class="user-name">@(booking.User?.Name ?? "Unknown User")</span>
+                        <div class="event-actions">
+                            @if (eventGroup.Bookings.Any(b => b.Status != BookingStatus.Cancelled))
+                            {
+                                <button class="btn btn-danger" @onclick="@(() => CancelEventForAllUsers(eventGroup.EventId, eventGroup.EventTitle))">
+                                    <span class="btn-icon">🚫</span>
+                                    Cancel Event for All Users
+                                </button>
+                            }
+                        </div>
+                        
+                        <div class="bookings-list">
+                            @foreach (var booking in eventGroup.Bookings.OrderByDescending(b => b.BookingTime))
+                            {
+                                <div class="booking-item">
+                                    <div class="booking-user">
+                                        <span class="user-icon">👤</span>
+                                        <span class="user-name">@(booking.User?.Name ?? "Unknown User")</span>
+                                        <span class="user-email">@(booking.User?.Email ?? "")</span>
+                                    </div>
+                                    <div class="booking-status">
+                                        <span class="status-badge @GetStatusClass(booking.Status)">
+                                            @GetStatusIcon(booking.Status) @booking.Status.ToString()
+                                        </span>
+                                    </div>
+                                    <div class="booking-time">
+                                        Booked: @booking.BookingTime.ToString("MMM dd, yyyy HH:mm")
+                                    </div>
                                 </div>
-                                <div class="event-details">
-                                    <div class="detail-item">
-                                        <span class="detail-icon">📅</span>
-                                        <span class="detail-text">@(booking.Event?.StartTime.ToString("MMM dd, yyyy HH:mm") ?? "TBD")</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-icon">📍</span>
-                                        <span class="detail-text">@(booking.Event?.Location ?? "Location TBD")</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-icon">💰</span>
-                                        <span class="detail-text">RM @(booking.Event?.Price?.ToString("F2") ?? "0.00")</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-icon">📝</span>
-                                        <span class="detail-text">Booked: @booking.BookingTime.ToString("MMM dd, yyyy HH:mm")</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="booking-actions">
-                                @if (booking.Status == BookingStatus.Pending)
-                                {
-                                    <button class="btn btn-sm btn-success" @onclick="@(() => UpdateBookingStatus(booking, BookingStatus.Confirmed))" @onclick:stopPropagation="true">
-                                        <span class="btn-icon">✅</span>
-                                        Confirm
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" @onclick="@(() => UpdateBookingStatus(booking, BookingStatus.Cancelled))" @onclick:stopPropagation="true">
-                                        <span class="btn-icon">❌</span>
-                                        Cancel
-                                    </button>
-                                }
-                                else if (booking.Status == BookingStatus.Confirmed)
-                                {
-                                    <button class="btn btn-sm btn-warning" @onclick="@(() => UpdateBookingStatus(booking, BookingStatus.Cancelled))" @onclick:stopPropagation="true">
-                                        <span class="btn-icon">❌</span>
-                                        Cancel
-                                    </button>
-                                }
-                            </div>
+                            }
                         </div>
                     </div>
                 }
@@ -189,6 +182,25 @@
         }
     }
 
+    private IEnumerable<EventGroup> eventGroups
+    {
+        get
+        {
+            return filteredBookings
+                .GroupBy(b => b.EventId)
+                .Select(g => new EventGroup
+                {
+                    EventId = g.Key,
+                    EventTitle = g.First().Event?.Title ?? "Unknown Event",
+                    EventDate = g.First().Event?.StartTime ?? DateTime.MinValue,
+                    EventLocation = g.First().Event?.Location ?? "Location TBD",
+                    EventPrice = g.First().Event?.Price,
+                    Bookings = g.ToList()
+                })
+                .OrderByDescending(eg => eg.EventDate);
+        }
+    }
+
     private IEnumerable<PenangGoApp.DataAccess.Booking> filteredBookings
     {
         get
@@ -211,34 +223,69 @@
         }
     }
 
-    private async Task UpdateBookingStatus(PenangGoApp.DataAccess.Booking booking, BookingStatus newStatus)
+    private async Task CancelEventForAllUsers(int eventId, string eventTitle)
     {
-        // Optimistically update the UI
-        var originalStatus = booking.Status;
-        booking.Status = newStatus;
-        StateHasChanged();
-
         try
         {
-            var success = await BookingService.UpdateBookingStatusAsync(booking.Id, newStatus);
-            if (success)
+            // Get all bookings for this event that are not already cancelled
+            var eventBookings = bookings.Where(b => b.EventId == eventId && b.Status != BookingStatus.Cancelled).ToList();
+            
+            if (!eventBookings.Any())
             {
-                NotificationService.RaiseNotification("Success", $"Booking #{booking.Id} {newStatus.ToString().ToLower()}");
+                NotificationService.RaiseNotification("Info", "No active bookings found for this event");
+                return;
+            }
+
+            // Show confirmation dialog
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+                $"Are you sure you want to cancel the event '{eventTitle}' for all {eventBookings.Count} users? This action cannot be undone.");
+
+            if (!confirmed) return;
+
+            // Cancel all bookings for this event
+            var successCount = 0;
+            var failureCount = 0;
+
+            foreach (var booking in eventBookings)
+            {
+                try
+                {
+                    var success = await BookingService.UpdateBookingStatusAsync(booking.Id, BookingStatus.Cancelled);
+                    if (success)
+                    {
+                        successCount++;
+                        booking.Status = BookingStatus.Cancelled; // Update UI optimistically
+                    }
+                    else
+                    {
+                        failureCount++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    failureCount++;
+                    Console.WriteLine($"Failed to cancel booking {booking.Id}: {ex.Message}");
+                }
+            }
+
+            // Refresh the bookings list
+            bookings = await BookingService.GetAllBookingsAsync();
+            StateHasChanged();
+
+            if (failureCount == 0)
+            {
+                NotificationService.RaiseNotification("Success", 
+                    $"Successfully cancelled event '{eventTitle}' for all {successCount} users");
             }
             else
             {
-                // Revert on failure
-                booking.Status = originalStatus;
-                StateHasChanged();
-                NotificationService.RaiseNotification("Error", "Failed to update booking status");
+                NotificationService.RaiseNotification("Warning", 
+                    $"Cancelled {successCount} bookings, but {failureCount} failed. Please check the logs.");
             }
         }
         catch (Exception ex)
         {
-            // Revert on error
-            booking.Status = originalStatus;
-            StateHasChanged();
-            NotificationService.RaiseNotification("Error", "Failed to update booking status: " + ex.Message);
+            NotificationService.RaiseNotification("Error", "Failed to cancel event: " + ex.Message);
         }
     }
 
@@ -268,5 +315,15 @@
             BookingStatus.Cancelled => "❌",
             _ => "❓"
         };
+    }
+
+    public class EventGroup
+    {
+        public int EventId { get; set; }
+        public string EventTitle { get; set; } = string.Empty;
+        public DateTime EventDate { get; set; }
+        public string EventLocation { get; set; } = string.Empty;
+        public decimal? EventPrice { get; set; }
+        public List<PenangGoApp.DataAccess.Booking> Bookings { get; set; } = new();
     }
 } 

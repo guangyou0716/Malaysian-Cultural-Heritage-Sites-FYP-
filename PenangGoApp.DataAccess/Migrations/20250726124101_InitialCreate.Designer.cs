@@ -12,7 +12,7 @@ using PenangGoApp.DataAccess;
 namespace PenangGoApp.DataAccess.Migrations
 {
     [DbContext(typeof(PenangGoContext))]
-    [Migration("20250717154924_InitialCreate")]
+    [Migration("20250726124101_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -106,10 +106,22 @@ namespace PenangGoApp.DataAccess.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("Gradient")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Icon")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("ImageUrl")
                         .HasColumnType("longtext");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsNew")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsPopular")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsTour")
@@ -122,7 +134,7 @@ namespace PenangGoApp.DataAccess.Migrations
                     b.Property<int>("MaxCapacity")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Price")
+                    b.Property<decimal?>("Price")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("StartDate")
@@ -133,6 +145,9 @@ namespace PenangGoApp.DataAccess.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Type")
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -146,18 +161,20 @@ namespace PenangGoApp.DataAccess.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 7, 17, 15, 49, 24, 412, DateTimeKind.Utc).AddTicks(3834),
+                            CreatedAt = new DateTime(2025, 7, 26, 12, 41, 1, 496, DateTimeKind.Utc).AddTicks(7446),
                             CurrentBookings = 0,
                             Description = "Explore the historic streets of George Town with our expert guide.",
-                            EndDate = new DateTime(2025, 7, 24, 18, 49, 24, 412, DateTimeKind.Utc).AddTicks(3830),
-                            EndTime = new DateTime(2025, 7, 24, 18, 49, 24, 412, DateTimeKind.Utc).AddTicks(3830),
+                            EndDate = new DateTime(2025, 8, 2, 15, 41, 1, 496, DateTimeKind.Utc).AddTicks(7439),
+                            EndTime = new DateTime(2025, 8, 2, 15, 41, 1, 496, DateTimeKind.Utc).AddTicks(7439),
                             IsActive = true,
+                            IsNew = false,
+                            IsPopular = false,
                             IsTour = false,
                             Location = "George Town Heritage Zone",
                             MaxCapacity = 20,
                             Price = 50.00m,
-                            StartDate = new DateTime(2025, 7, 24, 15, 49, 24, 412, DateTimeKind.Utc).AddTicks(3825),
-                            StartTime = new DateTime(2025, 7, 24, 15, 49, 24, 412, DateTimeKind.Utc).AddTicks(3825),
+                            StartDate = new DateTime(2025, 8, 2, 12, 41, 1, 496, DateTimeKind.Utc).AddTicks(7433),
+                            StartTime = new DateTime(2025, 8, 2, 12, 41, 1, 496, DateTimeKind.Utc).AddTicks(7433),
                             Title = "Heritage Walking Tour"
                         });
                 });
@@ -170,8 +187,17 @@ namespace PenangGoApp.DataAccess.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ARModelUrl")
+                    b.Property<string>("ApprovalNotes")
                         .HasColumnType("longtext");
+
+                    b.Property<int>("ApprovalStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("ApprovedBy")
+                        .HasColumnType("int");
 
                     b.Property<double>("AverageRating")
                         .HasColumnType("double");
@@ -224,8 +250,11 @@ namespace PenangGoApp.DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("PhotoGallery")
-                        .HasColumnType("longtext");
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("SubmittedBy")
+                        .HasColumnType("int");
 
                     b.Property<int>("TotalBookmarks")
                         .HasColumnType("int");
@@ -244,14 +273,19 @@ namespace PenangGoApp.DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("SubmittedBy");
+
                     b.ToTable("heritage_sites");
 
                     b.HasData(
                         new
                         {
                             Id = 1,
+                            ApprovalStatus = 1,
                             AverageRating = 0.0,
-                            CreatedAt = new DateTime(2025, 7, 17, 15, 49, 24, 412, DateTimeKind.Utc).AddTicks(3784),
+                            CreatedAt = new DateTime(2025, 7, 26, 12, 41, 1, 496, DateTimeKind.Utc).AddTicks(7337),
                             Description = "A large Chinese clanhouse with elaborate and highly ornamented architecture.",
                             HasPanoramaContent = true,
                             IsAccessible = true,
@@ -266,8 +300,9 @@ namespace PenangGoApp.DataAccess.Migrations
                         new
                         {
                             Id = 2,
+                            ApprovalStatus = 1,
                             AverageRating = 0.0,
-                            CreatedAt = new DateTime(2025, 7, 17, 15, 49, 24, 412, DateTimeKind.Utc).AddTicks(3804),
+                            CreatedAt = new DateTime(2025, 7, 26, 12, 41, 1, 496, DateTimeKind.Utc).AddTicks(7401),
                             Description = "A distinctive blue-colored mansion built in the 1880s.",
                             HasPanoramaContent = true,
                             IsAccessible = true,
@@ -289,6 +324,18 @@ namespace PenangGoApp.DataAccess.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ApprovalNotes")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("ApprovalStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("ApprovedBy")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -299,6 +346,9 @@ namespace PenangGoApp.DataAccess.Migrations
                     b.Property<string>("PanoramaUrl")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -311,6 +361,8 @@ namespace PenangGoApp.DataAccess.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApprovedBy");
 
                     b.HasIndex("HeritageSiteId");
 
@@ -367,9 +419,6 @@ namespace PenangGoApp.DataAccess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("DeviceToken")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -381,28 +430,13 @@ namespace PenangGoApp.DataAccess.Migrations
                     b.Property<bool>("EmailNotificationsEnabled")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<string>("EmailVerificationToken")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("EmailVerifiedAt")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsAdmin")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<bool>("IsEmailVerified")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("IsOnline")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<DateTime?>("LastLoginAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("LastSyncAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("LockedUntil")
@@ -416,9 +450,6 @@ namespace PenangGoApp.DataAccess.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<string>("OfflineData")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -431,32 +462,16 @@ namespace PenangGoApp.DataAccess.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
-                    b.Property<string>("PreferredLanguage")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ProfilePicture")
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
-
                     b.Property<bool>("PushNotifications")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("PushNotificationsEnabled")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<DateTime?>("ResetPasswordExpiresAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("ResetPasswordToken")
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime?>("SessionExpiresAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("SessionToken")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("TimeZone")
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
@@ -470,22 +485,18 @@ namespace PenangGoApp.DataAccess.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 7, 17, 15, 49, 24, 412, DateTimeKind.Utc).AddTicks(3688),
+                            CreatedAt = new DateTime(2025, 7, 26, 12, 41, 1, 496, DateTimeKind.Utc).AddTicks(7170),
                             Email = "admin@penanggo.com",
                             EmailNotifications = true,
                             EmailNotificationsEnabled = true,
                             IsActive = true,
                             IsAdmin = true,
-                            IsEmailVerified = false,
-                            IsOnline = true,
                             LoginAttempts = 0,
                             Name = "Admin User",
-                            PasswordHash = "MjxVz4WM2uV4BVLC+5ZcFDyBxNNtAi/Sa1DUBLxVBcupc7G/pGfeIN/8NnbfKPMOc3zLEte9uHosb7B/vpbfvA==",
-                            PasswordSalt = "kY1t66d4znRUDYUOvZ3UeZyntQgqVYDbDB1EDfM6qMEbbR6cVGN9sKOlqFz/E80EEX5mmaz/rqjPUz4ZLopJfHp/jbj4flPfLVCw5ivIelSvJN41NRgE9WZ+tE0kTJUvPtAnJ6GmTxzPiLpx/GGLwv4AThdZdtXO6RhDfsL7ZYE=",
-                            PreferredLanguage = "en",
+                            PasswordHash = "UYD2dJY3dUHN8p7VwkRmh6tX0sM6IMb/uIdAjrAuqukxrqWPu0P7hxdMG4gyOx08VqYmIiLXlyGgcdt1/92tIQ==",
+                            PasswordSalt = "q1TMdAHd7KCqoQSX6YG5tAzXLlFt7UyFvPmNMG/GSpPvkjzBdWi0kuOYxiBjM7gyYHrewqfhyTl+9hyrmrBIeP+E7xZE+2InJ71bK9pXQF7TQXur27STFcT2Glt05D0HDLoedcmSpuEVgNCRszmtCMRl7sB2knNPB7iV2prcoZk=",
                             PushNotifications = true,
-                            PushNotificationsEnabled = true,
-                            TimeZone = "Asia/Kuala_Lumpur"
+                            PushNotificationsEnabled = true
                         });
                 });
 
@@ -527,8 +538,27 @@ namespace PenangGoApp.DataAccess.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("PenangGoApp.DataAccess.HeritageSite", b =>
+                {
+                    b.HasOne("PenangGoApp.DataAccess.User", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy");
+
+                    b.HasOne("PenangGoApp.DataAccess.User", "Submitter")
+                        .WithMany()
+                        .HasForeignKey("SubmittedBy");
+
+                    b.Navigation("Approver");
+
+                    b.Navigation("Submitter");
+                });
+
             modelBuilder.Entity("PenangGoApp.DataAccess.PanoramaContent", b =>
                 {
+                    b.HasOne("PenangGoApp.DataAccess.User", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy");
+
                     b.HasOne("PenangGoApp.DataAccess.HeritageSite", "HeritageSite")
                         .WithMany("PanoramaContents")
                         .HasForeignKey("HeritageSiteId");
@@ -536,6 +566,8 @@ namespace PenangGoApp.DataAccess.Migrations
                     b.HasOne("PenangGoApp.DataAccess.User", "Uploader")
                         .WithMany()
                         .HasForeignKey("UploadedBy");
+
+                    b.Navigation("Approver");
 
                     b.Navigation("HeritageSite");
 

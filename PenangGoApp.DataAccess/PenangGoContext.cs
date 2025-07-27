@@ -28,7 +28,6 @@ namespace PenangGoApp.DataAccess
                 entity.Property(e => e.PasswordHash).IsRequired();
                 entity.Property(e => e.PasswordSalt).IsRequired();
                 entity.Property(e => e.PhoneNumber).HasMaxLength(20);
-                entity.Property(e => e.ProfilePicture).HasMaxLength(200);
                 entity.Property(e => e.Bio).HasMaxLength(500);
             });
 

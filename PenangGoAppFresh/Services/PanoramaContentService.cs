@@ -93,5 +93,23 @@ namespace PenangGoAppFresh.Services
             var response = await _httpClient.DeleteAsync($"{BaseUrl}/api/arcontent/{panoramaId}");
             response.EnsureSuccessStatusCode();
         }
+
+        public async Task SubmitForApprovalAsync(string title, string description, string panoramaUrl, int uploadedBy, int heritageSiteId)
+        {
+            var pano = new PanoramaContent
+            {
+                Title = title,
+                Description = description,
+                PanoramaUrl = panoramaUrl,
+                UploadedBy = uploadedBy,
+                UploadedAt = DateTime.UtcNow,
+                SubmittedAt = DateTime.UtcNow,
+                HeritageSiteId = heritageSiteId,
+                ApprovalStatus = (PenangGoApp.DataAccess.ApprovalStatus)ApprovalStatus.Pending // Set to pending for user submissions
+            };
+            
+            _context.PanoramaContents.Add(pano);
+            await _context.SaveChangesAsync();
+        }
     }
 }

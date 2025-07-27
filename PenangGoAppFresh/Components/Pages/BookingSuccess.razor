@@ -1,0 +1,112 @@
+@page "/booking-success"
+@using PenangGoAppFresh.Services
+@inject NavigationManager Navigation
+@inject PenangGoAppFresh.Services.NotificationService NotificationService
+
+<div class="booking-success-container fade-in">
+    <div class="success-card">
+        <div class="success-icon">
+            <span class="checkmark">✓</span>
+        </div>
+        
+        <h1 class="success-title">Booking Confirmed!</h1>
+        <p class="success-message">Your event has been successfully booked. You will receive a confirmation email shortly.</p>
+        <p class="payment-thanks">Thank you for your payment!</p>
+        
+        @if (bookingDetails != null)
+        {
+            <div class="booking-details">
+                <h3>Booking Details</h3>
+                <div class="detail-item">
+                    <span class="detail-label">Event:</span>
+                    <span class="detail-value">@bookingDetails.EventTitle</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Date:</span>
+                    <span class="detail-value">@bookingDetails.EventDate.ToString("MMM dd, yyyy")</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Time:</span>
+                    <span class="detail-value">@bookingDetails.EventTime</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Location:</span>
+                    <span class="detail-value">@bookingDetails.EventLocation</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Price:</span>
+                    <span class="detail-value price-value">@bookingDetails.EventPrice</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Booking ID:</span>
+                    <span class="detail-value">#@bookingDetails.BookingId</span>
+                </div>
+            </div>
+        }
+        
+        <div class="success-actions">
+            <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/events"))">
+                <span class="btn-icon">🎫</span>
+                Book More Events
+            </button>
+            <button class="btn btn-outline" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">
+                <span class="btn-icon">🏠</span>
+                Go to Dashboard
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private BookingSuccessDetails? bookingDetails;
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? EventTitle { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? EventDate { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? EventTime { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? EventLocation { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? BookingId { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? EventPrice { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrEmpty(EventTitle))
+        {
+            bookingDetails = new BookingSuccessDetails
+            {
+                EventTitle = EventTitle,
+                EventDate = DateTime.TryParse(EventDate, out var date) ? date : DateTime.Now,
+                EventTime = EventTime ?? "",
+                EventLocation = EventLocation ?? "",
+                EventPrice = EventPrice ?? "Free",
+                BookingId = BookingId ?? ""
+            };
+        }
+    }
+
+    public class BookingSuccessDetails
+    {
+        public string EventTitle { get; set; } = "";
+        public DateTime EventDate { get; set; }
+        public string EventTime { get; set; } = "";
+        public string EventLocation { get; set; } = "";
+        public string EventPrice { get; set; } = "";
+        public string BookingId { get; set; } = "";
+    }
+} 

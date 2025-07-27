@@ -1,5 +1,6 @@
 @page "/events"
 @using PenangGoAppFresh.Services
+@using System.Collections.Generic
 @inject NavigationManager Navigation
 @inject PenangGoAppFresh.Services.NotificationService NotificationService
 @inject PenangGoAppFresh.Services.EventService EventService
@@ -231,7 +232,7 @@
     private List<Event> events = new();
     private HashSet<int> bookedEventIds = new();
 
-    [Inject] PenangGoAppFresh.Services.BookingService BookingService { get; set; }
+    [Inject] PenangGoAppFresh.Services.IApiBookingService BookingService { get; set; }
     [Inject] PenangGoAppFresh.Auth.AuthService AuthService { get; set; }
 
     protected override async Task OnInitializedAsync()
@@ -316,10 +317,20 @@
         }
         if (AuthService != null && AuthService.CurrentUser != null)
         {
-            await BookingService.BookEventAsync(AuthService.CurrentUser.Id, evt.Id);
-            bookedEventIds.Add(evt.Id);
-            NotificationService.RaiseNotification("Booked", $"Event '{evt.Title}' has been booked.");
-            StateHasChanged();
+            // Redirect to payment page with details
+            var queryParams = new Dictionary<string, string>
+            {
+                ["EventTitle"] = evt.Title,
+                ["EventDate"] = evt.Date.ToString("yyyy-MM-dd"),
+                ["EventTime"] = evt.Time,
+                ["EventLocation"] = evt.Location,
+                ["EventPrice"] = evt.Price?.ToString() ?? "Free",
+                ["EventId"] = evt.Id.ToString()
+            };
+            
+            var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
+            Console.WriteLine($"Redirecting to: /payment?{queryString}");
+            Navigation.NavigateTo($"/payment?{queryString}");
         }
     }
 

@@ -308,7 +308,7 @@ else
     public class ReviewInput { public int Rating { get; set; } = 5; public string Comment { get; set; } }
     [Inject] PenangGoAppFresh.Services.ReviewService ReviewService { get; set; }
     [Inject] PenangGoAppFresh.Services.EventService EventService { get; set; }
-    [Inject] PenangGoAppFresh.Services.BookmarkService BookmarkService { get; set; }
+    [Inject] PenangGoAppFresh.Services.IApiBookmarkService BookmarkService { get; set; }
 
     private ReviewInput editReviewInput = new ReviewInput();
     private PenangGoApp.DataAccess.Review editingReview = null;
@@ -369,15 +369,21 @@ else
     }
     private async Task AddBookmarkAsync()
     {
-        await BookmarkService.AddBookmarkAsync(AuthService.CurrentUser?.Id ?? 0, id);
-        isBookmarked = true;
-        StateHasChanged();
+        var success = await BookmarkService.AddBookmarkAsync(AuthService.CurrentUser?.Id ?? 0, id);
+        if (success)
+        {
+            isBookmarked = true;
+            StateHasChanged();
+        }
     }
     private async Task RemoveBookmarkAsync()
     {
-        await BookmarkService.RemoveBookmarkAsync(AuthService.CurrentUser?.Id ?? 0, id);
-        isBookmarked = false;
-        StateHasChanged();
+        var success = await BookmarkService.RemoveBookmarkAsync(AuthService.CurrentUser?.Id ?? 0, id);
+        if (success)
+        {
+            isBookmarked = false;
+            StateHasChanged();
+        }
     }
 
     private async Task OpenInNewTab(string url)

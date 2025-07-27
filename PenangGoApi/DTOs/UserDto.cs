@@ -9,7 +9,6 @@ namespace PenangGoApi.DTOs
         public bool IsActive { get; set; }
         public string? PhoneNumber { get; set; }
         public string? Bio { get; set; }
-        public string? ProfilePicture { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 } 

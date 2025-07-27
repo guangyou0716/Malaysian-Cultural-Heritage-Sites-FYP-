@@ -1,5 +1,5 @@
 @page "/mybookmarks"
-@inject PenangGoAppFresh.Services.BookmarkService BookmarkService
+@inject PenangGoAppFresh.Services.IApiBookmarkService BookmarkService
 @inject PenangGoAppFresh.Auth.AuthService AuthService
 @inject NavigationManager Navigation
 
@@ -24,14 +24,14 @@
             {
                 <div class="col">
                     <div class="card shadow-sm h-100 bookmark-card clickable" @onclick="@(() => Navigation.NavigateTo($"/site/{bookmark.SiteId}"))">
-                        @if (!string.IsNullOrEmpty(bookmark.Site.ImageUrl))
+                        @if (bookmark.Site != null && !string.IsNullOrEmpty(bookmark.Site.ImageUrl))
                         {
                             <img src="@bookmark.Site.ImageUrl" class="card-img-top bookmark-img" alt="@bookmark.Site.Name" />
                         }
                         <div class="card-body">
-                            <h5 class="card-title">@bookmark.Site.Name</h5>
-                            <div class="mb-2 text-secondary"><span class="heritage-icon">📍</span> @bookmark.Site.Location</div>
-                            <p class="card-text">@bookmark.Site.Description</p>
+                            <h5 class="card-title">@(bookmark.Site?.Name ?? "Unknown Site")</h5>
+                            <div class="mb-2 text-secondary"><span class="heritage-icon">📍</span> @(bookmark.Site?.Location ?? "Location not available")</div>
+                            <p class="card-text">@(bookmark.Site?.Description ?? "No description available")</p>
                         </div>
                     </div>
                 </div>

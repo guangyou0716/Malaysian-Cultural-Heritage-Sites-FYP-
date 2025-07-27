@@ -16,7 +16,10 @@ namespace PenangGoAppFresh.Services
 
         public async Task<List<Bookmark>> GetUserBookmarksAsync(int userId)
         {
-            return await _context.Bookmarks.Where(b => b.UserId == userId).ToListAsync();
+            return await _context.Bookmarks
+                .Include(b => b.Site)
+                .Where(b => b.UserId == userId)
+                .ToListAsync();
         }
 
         public async Task AddBookmarkAsync(int userId, int siteId)

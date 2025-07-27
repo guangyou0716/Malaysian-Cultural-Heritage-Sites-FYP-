@@ -130,6 +130,14 @@
                         </div>
 
                         <div class="nav-section">
+                            <h3 class="nav-title">Contribute</h3>
+                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/submit-content"))">
+                                <span class="nav-icon">📝</span>
+                                <span class="nav-text">Submit Content</span>
+                            </button>
+                        </div>
+
+                        <div class="nav-section">
                             <h3 class="nav-title">Account</h3>
                             @if (!AuthService.IsLoggedIn)
                             {

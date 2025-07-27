@@ -60,6 +60,12 @@ public static class MauiProgram
         builder.Services.AddScoped<PenangGoAppFresh.Services.OfflineSyncService>();
         builder.Services.AddSingleton<PenangGoAppFresh.Services.NotificationService>();
 
+        // Register API-based booking service for email notifications
+        builder.Services.AddScoped<IApiBookingService, ApiBookingService>();
+        
+        // Register API-based bookmark service
+        builder.Services.AddScoped<IApiBookmarkService, ApiBookmarkService>();
+
         return builder.Build();
     }
 }

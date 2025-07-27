@@ -252,8 +252,6 @@ namespace PenangGoAppFresh.Auth
                 var user = await _apiService.GetUserByIdAsync(userId);
                 if (user == null) return false;
 
-                user.DeviceToken = deviceToken;
-
                 var updatedUser = await _apiService.UpdateUserAsync(user);
                 if (updatedUser != null)
                 {

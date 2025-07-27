@@ -35,9 +35,6 @@ namespace PenangGoApp.DataAccess
         [StringLength(20)]
         public string? PhoneNumber { get; set; }
 
-        [StringLength(200)]
-        public string? ProfilePicture { get; set; }
-
         [StringLength(500)]
         public string? Bio { get; set; }
 
@@ -45,19 +42,6 @@ namespace PenangGoApp.DataAccess
 
         public bool PushNotificationsEnabled { get; set; } = true;
 
-        public string? DeviceToken { get; set; }
-
-        // Additional properties for enhanced functionality
-        public string? PreferredLanguage { get; set; } = "en"; // Language preference
-        
-        public string? TimeZone { get; set; } = "Asia/Kuala_Lumpur"; // User's timezone
-        
-        public DateTime? LastSyncAt { get; set; } // Last offline sync timestamp
-        
-        public string? OfflineData { get; set; } // JSON data for offline mode
-        
-        public bool IsOnline { get; set; } = true; // Online/offline status
-        
         public string? SessionToken { get; set; } // Current session token
         
         public DateTime? SessionExpiresAt { get; set; } // Session expiration
@@ -65,16 +49,6 @@ namespace PenangGoApp.DataAccess
         public int LoginAttempts { get; set; } = 0; // Failed login attempts
         
         public DateTime? LockedUntil { get; set; } // Account lockout until
-        
-        public string? ResetPasswordToken { get; set; } // Password reset token
-        
-        public DateTime? ResetPasswordExpiresAt { get; set; } // Reset token expiration
-        
-        public string? EmailVerificationToken { get; set; } // Email verification token
-        
-        public bool IsEmailVerified { get; set; } = false; // Email verification status
-        
-        public DateTime? EmailVerifiedAt { get; set; } // Email verification timestamp
 
         // Compatibility properties for AuthService
         public bool EmailNotifications 
@@ -94,23 +68,12 @@ namespace PenangGoApp.DataAccess
         public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
         public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 
-        // Helper methods
-        public bool HasAdminPrivileges() => IsAdmin && IsActive;
-
         public void UpdateLastLogin()
         {
             LastLoginAt = DateTime.UtcNow;
             LoginAttempts = 0; // Reset failed attempts on successful login
         }
 
-        public bool CanAccessARContent() => IsActive;
-
-        public bool CanManageEvents() => IsAdmin && IsActive;
-
-        public bool CanManageHeritageSites() => IsAdmin && IsActive;
-
-        public bool CanViewAnalytics() => IsAdmin && IsActive;
-        
         public bool IsAccountLocked() => LockedUntil.HasValue && LockedUntil.Value > DateTime.UtcNow;
         
         public void IncrementLoginAttempts()
@@ -120,12 +83,6 @@ namespace PenangGoApp.DataAccess
             {
                 LockedUntil = DateTime.UtcNow.AddMinutes(30);
             }
-        }
-        
-        public void ResetPasswordAttempts()
-        {
-            LoginAttempts = 0;
-            LockedUntil = null;
         }
     }
 } 

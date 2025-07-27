@@ -1,8 +1,9 @@
 @page "/event/{id:int}"
+@using System.Collections.Generic
 @inject PenangGoAppFresh.Services.EventService EventService
 @inject NavigationManager Navigation
 @inject PenangGoAppFresh.Auth.AuthService AuthService
-@inject PenangGoAppFresh.Services.BookingService BookingService
+@inject PenangGoAppFresh.Services.IApiBookingService BookingService
 
 <div class="site-details-container fade-in">
     @if (eventData == null)
@@ -136,9 +137,19 @@
         }
         if (!isBooked)
         {
-            await BookingService.BookEventAsync(AuthService.CurrentUser.Id, id);
-            isBooked = true;
-            StateHasChanged();
+            // Redirect to payment page with details
+            var queryParams = new Dictionary<string, string>
+            {
+                ["EventTitle"] = eventData.Title,
+                ["EventDate"] = eventData.Date.ToString("yyyy-MM-dd"),
+                ["EventTime"] = eventData.Time,
+                ["EventLocation"] = eventData.Location,
+                ["EventPrice"] = eventData.Price,
+                ["EventId"] = eventData.Id.ToString()
+            };
+            
+            var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
+            Navigation.NavigateTo($"/payment?{queryString}");
         }
     }
 

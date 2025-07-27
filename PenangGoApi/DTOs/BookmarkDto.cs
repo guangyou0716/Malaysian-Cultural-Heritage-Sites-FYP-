@@ -6,5 +6,6 @@ namespace PenangGoApi.DTOs
         public int UserId { get; set; }
         public int SiteId { get; set; }
         public DateTime CreatedAt { get; set; }
+        public HeritageSiteDto? Site { get; set; }
     }
 } 

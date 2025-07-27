@@ -1,3 +1,5 @@
+using PenangGoApp.DataAccess;
+
 namespace PenangGoApi.DTOs
 {
     public class HeritageSiteDto
@@ -13,5 +15,11 @@ namespace PenangGoApi.DTOs
         public double AverageRating { get; set; }
         public int TotalReviews { get; set; }
         public bool HasPanoramaContent { get; set; }
+        
+        // Approval system fields
+        public ApprovalStatus ApprovalStatus { get; set; }
+        public DateTime? SubmittedAt { get; set; }
+        public DateTime? ApprovedAt { get; set; }
+        public string? ApprovalNotes { get; set; }
     }
 } 

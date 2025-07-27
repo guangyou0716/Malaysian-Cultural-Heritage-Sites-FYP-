@@ -22,5 +22,20 @@ namespace PenangGoApp.DataAccess
         public int? HeritageSiteId { get; set; }
         [ForeignKey("HeritageSiteId")]
         public HeritageSite HeritageSite { get; set; }
+        
+        // Approval system fields
+        public ApprovalStatus ApprovalStatus { get; set; } = ApprovalStatus.Approved; // Default to approved for admin-created content
+        
+        public DateTime? SubmittedAt { get; set; } // When the panorama was submitted (same as UploadedAt for user submissions)
+        
+        public int? ApprovedBy { get; set; } // Admin who approved/rejected the panorama
+        
+        public DateTime? ApprovedAt { get; set; } // When the panorama was approved/rejected
+        
+        public string? ApprovalNotes { get; set; } // Admin notes for approval/rejection
+        
+        // Navigation property for approval system
+        [ForeignKey("ApprovedBy")]
+        public virtual User? Approver { get; set; }
     }
 }

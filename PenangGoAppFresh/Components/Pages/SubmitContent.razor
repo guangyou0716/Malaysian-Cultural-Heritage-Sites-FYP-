@@ -1,0 +1,679 @@
+@page "/submit-content"
+@using PenangGoApp.DataAccess
+@inject PenangGoAppFresh.Services.HeritageSiteService HeritageSiteService
+@inject PenangGoAppFresh.Services.PanoramaContentService PanoramaContentService
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject PenangGoAppFresh.Services.NotificationService NotificationService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="submit-content-container fade-in">
+    <!-- Header Section -->
+    <div class="submit-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <span class="title-icon">📝</span>
+                Submit Content
+            </h1>
+            <p class="page-subtitle">Share your knowledge about Malaysian cultural heritage sites</p>
+        </div>
+    </div>
+
+    @if (AuthService == null || !AuthService.IsLoggedIn)
+    {
+        <div class="auth-required-section">
+            <div class="auth-card">
+                <div class="auth-icon">🔐</div>
+                <h3>Authentication Required</h3>
+                <p>Please log in to submit content</p>
+                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/login"))">
+                    <span class="btn-icon">🔑</span>
+                    Login Now
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="submit-content">
+            <!-- Content Type Selection -->
+            <div class="content-type-section">
+                <div class="type-selector">
+                    <button class="type-btn @(selectedType == ContentType.HeritageSite ? "active" : "")" 
+                            @onclick="@(() => selectedType = ContentType.HeritageSite)">
+                        <span class="type-icon">🏛️</span>
+                        <span class="type-title">Heritage Site</span>
+                        <span class="type-desc">Submit a new cultural heritage site</span>
+                    </button>
+                    <button class="type-btn @(selectedType == ContentType.Panorama ? "active" : "")" 
+                            @onclick="@(() => selectedType = ContentType.Panorama)">
+                        <span class="type-icon">🖼️</span>
+                        <span class="type-title">Panorama</span>
+                        <span class="type-desc">Add panorama content to existing sites</span>
+                    </button>
+                    <button class="type-btn @(selectedType == ContentType.SiteWithPanorama ? "active" : "")" 
+                            @onclick="@(() => selectedType = ContentType.SiteWithPanorama)">
+                        <span class="type-icon">🎯</span>
+                        <span class="type-title">Site + Panorama</span>
+                        <span class="type-desc">Submit site with panorama together</span>
+                    </button>
+                </div>
+            </div>
+
+            @if (selectedType == ContentType.HeritageSite)
+            {
+                <!-- Heritage Site Submission Form -->
+                <div class="submission-form">
+                    <div class="form-header">
+                        <h2>Submit Heritage Site</h2>
+                        <p>Share information about a cultural heritage site in Malaysia</p>
+                    </div>
+                    
+                    <div class="form-content">
+                        <div class="form-group">
+                            <label>Site Name *</label>
+                            <input type="text" class="form-control" @bind="siteSubmission.Name" 
+                                   placeholder="e.g., Khoo Kongsi Clan House" />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Description *</label>
+                            <textarea class="form-control" @bind="siteSubmission.Description" rows="4"
+                                      placeholder="Describe the site's historical and cultural significance..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Location *</label>
+                            <input type="text" class="form-control" @bind="siteSubmission.Location" 
+                                   placeholder="e.g., George Town, Penang" />
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Latitude</label>
+                                <input type="number" step="0.000001" class="form-control" @bind="siteSubmission.Latitude" 
+                                       placeholder="0.000000" />
+                            </div>
+                            <div class="form-group">
+                                <label>Longitude</label>
+                                <input type="number" step="0.000001" class="form-control" @bind="siteSubmission.Longitude" 
+                                       placeholder="0.000000" />
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Category</label>
+                                <input type="text" class="form-control" @bind="siteSubmission.Category" 
+                                       placeholder="e.g., Temple, Mosque, Mansion" />
+                            </div>
+                            <div class="form-group">
+                                <label>Historical Period</label>
+                                <input type="text" class="form-control" @bind="siteSubmission.HistoricalPeriod" 
+                                       placeholder="e.g., 19th Century, Colonial Era" />
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Image URL</label>
+                            <input type="url" class="form-control" @bind="siteSubmission.ImageUrl" 
+                                   placeholder="https://example.com/image.jpg" />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Cultural Significance</label>
+                            <textarea class="form-control" @bind="siteSubmission.CulturalSignificance" rows="3"
+                                      placeholder="Explain the cultural importance and significance..."></textarea>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Visiting Hours</label>
+                                <input type="text" class="form-control" @bind="siteSubmission.VisitingHours" 
+                                       placeholder="e.g., 9:00 AM - 5:00 PM" />
+                            </div>
+                            <div class="form-group">
+                                <label>Entry Fee</label>
+                                <input type="text" class="form-control" @bind="siteSubmission.EntryFee" 
+                                       placeholder="e.g., Free, RM 10" />
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Contact Information</label>
+                                <input type="text" class="form-control" @bind="siteSubmission.ContactInfo" 
+                                       placeholder="Phone, email, or contact details" />
+                            </div>
+                            <div class="form-group">
+                                <label>Website</label>
+                                <input type="url" class="form-control" @bind="siteSubmission.Website" 
+                                       placeholder="https://example.com" />
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button class="btn btn-secondary" @onclick="ResetSiteForm">
+                                <span class="btn-icon">🔄</span>
+                                Reset Form
+                            </button>
+                            <button class="btn btn-primary" @onclick="SubmitHeritageSite" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="btn-icon">⏳</span>
+                                    <span>Submitting...</span>
+                                }
+                                else
+                                {
+                                    <span class="btn-icon">📤</span>
+                                    <span>Submit Site</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (selectedType == ContentType.Panorama)
+            {
+                <!-- Panorama Submission Form -->
+                <div class="submission-form">
+                    <div class="form-header">
+                        <h2>Submit Panorama</h2>
+                        <p>Add 360° panorama content to existing heritage sites</p>
+                    </div>
+                    
+                    <div class="form-content">
+                        <div class="form-group">
+                            <label>Select Heritage Site *</label>
+                            <select class="form-control" @bind="panoramaSubmission.HeritageSiteId" @bind:after="OnSiteSelectionChanged">
+                                <option value="0">Select a site...</option>
+                                @foreach (var site in approvedSites)
+                                {
+                                    var hasPanorama = sitesWithPanoramas.Contains(site.Id);
+                                    var optionText = hasPanorama ? $"{site.Name} - {site.Location} (Has Panorama)" : $"{site.Name} - {site.Location}";
+                                    var disabled = hasPanorama ? "disabled" : "";
+                                    <option value="@site.Id" disabled="@hasPanorama">@optionText</option>
+                                }
+                            </select>
+                            @if (selectedSiteHasPanorama)
+                            {
+                                <div class="alert alert-warning">
+                                    <span class="alert-icon">⚠️</span>
+                                    This site already has a panorama. Each site can only have one panorama.
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Panorama Title *</label>
+                            <input type="text" class="form-control" @bind="panoramaSubmission.Title" 
+                                   placeholder="e.g., Main Hall Interior View" />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea class="form-control" @bind="panoramaSubmission.Description" rows="3"
+                                      placeholder="Describe what this panorama shows..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Panorama URL *</label>
+                            <input type="url" class="form-control" @bind="panoramaSubmission.PanoramaUrl" 
+                                   placeholder="https://example.com/panorama.html" />
+                            <small class="form-help">Provide a link to a 360° panorama viewer (e.g., Google Street View, custom panorama)</small>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button class="btn btn-secondary" @onclick="ResetPanoramaForm">
+                                <span class="btn-icon">🔄</span>
+                                Reset Form
+                            </button>
+                            <button class="btn btn-primary" @onclick="SubmitPanorama" disabled="@(isSubmitting || selectedSiteHasPanorama)">
+                                @if (isSubmitting)
+                                {
+                                    <span class="btn-icon">⏳</span>
+                                    <span>Submitting...</span>
+                                }
+                                else if (selectedSiteHasPanorama)
+                                {
+                                    <span class="btn-icon">❌</span>
+                                    <span>Site Has Panorama</span>
+                                }
+                                else
+                                {
+                                    <span class="btn-icon">📤</span>
+                                    <span>Submit Panorama</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- Combined Site + Panorama Submission Form -->
+                <div class="submission-form">
+                    <div class="form-header">
+                        <h2>Submit Heritage Site with Panorama</h2>
+                        <p>Submit a new heritage site along with its 360° panorama content</p>
+                    </div>
+                    
+                    <div class="form-content">
+                        <!-- Site Information Section -->
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <span class="section-icon">🏛️</span>
+                                Heritage Site Information
+                            </h3>
+                            
+                            <div class="form-group">
+                                <label>Site Name *</label>
+                                <input type="text" class="form-control" @bind="combinedSubmission.SiteName" 
+                                       placeholder="e.g., Khoo Kongsi Clan House" />
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Description *</label>
+                                <textarea class="form-control" @bind="combinedSubmission.SiteDescription" rows="4"
+                                          placeholder="Describe the site's historical and cultural significance..."></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Location *</label>
+                                <input type="text" class="form-control" @bind="combinedSubmission.SiteLocation" 
+                                       placeholder="e.g., George Town, Penang" />
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Latitude</label>
+                                    <input type="number" step="0.000001" class="form-control" @bind="combinedSubmission.SiteLatitude" 
+                                           placeholder="0.000000" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Longitude</label>
+                                    <input type="number" step="0.000001" class="form-control" @bind="combinedSubmission.SiteLongitude" 
+                                           placeholder="0.000000" />
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Category</label>
+                                    <input type="text" class="form-control" @bind="combinedSubmission.SiteCategory" 
+                                           placeholder="e.g., Temple, Mosque, Mansion" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Historical Period</label>
+                                    <input type="text" class="form-control" @bind="combinedSubmission.SiteHistoricalPeriod" 
+                                           placeholder="e.g., 19th Century, Colonial Era" />
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Image URL</label>
+                                <input type="url" class="form-control" @bind="combinedSubmission.SiteImageUrl" 
+                                       placeholder="https://example.com/image.jpg" />
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Cultural Significance</label>
+                                <textarea class="form-control" @bind="combinedSubmission.SiteCulturalSignificance" rows="3"
+                                          placeholder="Explain the cultural importance and significance..."></textarea>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Visiting Hours</label>
+                                    <input type="text" class="form-control" @bind="combinedSubmission.SiteVisitingHours" 
+                                           placeholder="e.g., 9:00 AM - 5:00 PM" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Entry Fee</label>
+                                    <input type="text" class="form-control" @bind="combinedSubmission.SiteEntryFee" 
+                                           placeholder="e.g., Free, RM 10" />
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Contact Information</label>
+                                    <input type="text" class="form-control" @bind="combinedSubmission.SiteContactInfo" 
+                                           placeholder="Phone, email, or contact details" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Website</label>
+                                    <input type="url" class="form-control" @bind="combinedSubmission.SiteWebsite" 
+                                           placeholder="https://example.com" />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Panorama Information Section -->
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <span class="section-icon">🖼️</span>
+                                Panorama Content
+                            </h3>
+                            
+                            <div class="form-group">
+                                <label>Panorama Title *</label>
+                                <input type="text" class="form-control" @bind="combinedSubmission.PanoramaTitle" 
+                                       placeholder="e.g., Main Hall Interior View" />
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Panorama Description</label>
+                                <textarea class="form-control" @bind="combinedSubmission.PanoramaDescription" rows="3"
+                                          placeholder="Describe what this panorama shows..."></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Panorama URL *</label>
+                                <input type="url" class="form-control" @bind="combinedSubmission.PanoramaUrl" 
+                                       placeholder="https://example.com/panorama.html" />
+                                <small class="form-help">Provide a link to a 360° panorama viewer (e.g., Google Street View, custom panorama)</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button class="btn btn-secondary" @onclick="ResetCombinedForm">
+                                <span class="btn-icon">🔄</span>
+                                Reset Form
+                            </button>
+                            <button class="btn btn-primary" @onclick="SubmitCombinedContent" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="btn-icon">⏳</span>
+                                    <span>Submitting...</span>
+                                }
+                                else
+                                {
+                                    <span class="btn-icon">📤</span>
+                                    <span>Submit Site & Panorama</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private ContentType selectedType = ContentType.SiteWithPanorama; // Default to combined submission
+    private bool isSubmitting = false;
+    private List<HeritageSite> approvedSites = new();
+    private HashSet<int> sitesWithPanoramas = new();
+    private bool selectedSiteHasPanorama = false;
+    
+    // Heritage Site submission
+    private HeritageSite siteSubmission = new();
+    
+    // Panorama submission
+    private PanoramaSubmission panoramaSubmission = new();
+    
+    // Combined submission
+    private CombinedSubmission combinedSubmission = new();
+    
+    public enum ContentType
+    {
+        HeritageSite,
+        Panorama,
+        SiteWithPanorama
+    }
+    
+    public class PanoramaSubmission
+    {
+        public int HeritageSiteId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string PanoramaUrl { get; set; } = string.Empty;
+    }
+    
+    public class CombinedSubmission
+    {
+        // Site Information
+        public string SiteName { get; set; } = string.Empty;
+        public string SiteDescription { get; set; } = string.Empty;
+        public string SiteLocation { get; set; } = string.Empty;
+        public double SiteLatitude { get; set; }
+        public double SiteLongitude { get; set; }
+        public string SiteCategory { get; set; } = string.Empty;
+        public string SiteHistoricalPeriod { get; set; } = string.Empty;
+        public string SiteImageUrl { get; set; } = string.Empty;
+        public string SiteCulturalSignificance { get; set; } = string.Empty;
+        public string SiteVisitingHours { get; set; } = string.Empty;
+        public string SiteEntryFee { get; set; } = string.Empty;
+        public string SiteContactInfo { get; set; } = string.Empty;
+        public string SiteWebsite { get; set; } = string.Empty;
+        
+        // Panorama Information
+        public string PanoramaTitle { get; set; } = string.Empty;
+        public string PanoramaDescription { get; set; } = string.Empty;
+        public string PanoramaUrl { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthService != null && AuthService.IsLoggedIn)
+        {
+            await LoadApprovedSites();
+            await LoadExistingPanoramas();
+        }
+    }
+
+    private async Task LoadApprovedSites()
+    {
+        try
+        {
+            var allSites = await HeritageSiteService.GetAllAsync();
+            approvedSites = allSites.Where(s => s.ApprovalStatus == ApprovalStatus.Approved && s.IsActive).ToList();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to load sites: " + ex.Message);
+        }
+    }
+
+    private async Task LoadExistingPanoramas()
+    {
+        try
+        {
+            var allPanoramas = await PanoramaContentService.GetAllAsync();
+            // Get sites that already have panoramas (approved or pending)
+            sitesWithPanoramas = allPanoramas
+                .Where(p => p.HeritageSiteId.HasValue)
+                .Select(p => p.HeritageSiteId.Value)
+                .ToHashSet();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", "Failed to load existing panoramas: " + ex.Message);
+        }
+    }
+
+    private void OnSiteSelectionChanged()
+    {
+        selectedSiteHasPanorama = panoramaSubmission.HeritageSiteId > 0 && 
+                                 sitesWithPanoramas.Contains(panoramaSubmission.HeritageSiteId);
+    }
+
+    private void ResetSiteForm()
+    {
+        siteSubmission = new HeritageSite();
+    }
+
+    private void ResetPanoramaForm()
+    {
+        panoramaSubmission = new PanoramaSubmission();
+    }
+
+    private void ResetCombinedForm()
+    {
+        combinedSubmission = new CombinedSubmission();
+    }
+
+    private async Task SubmitHeritageSite()
+    {
+        if (string.IsNullOrWhiteSpace(siteSubmission.Name) || 
+            string.IsNullOrWhiteSpace(siteSubmission.Description) || 
+            string.IsNullOrWhiteSpace(siteSubmission.Location))
+        {
+            NotificationService.RaiseNotification("Error", "Please fill in all required fields (Name, Description, Location)");
+            return;
+        }
+
+        isSubmitting = true;
+        try
+        {
+            // Set submission details
+            siteSubmission.ApprovalStatus = ApprovalStatus.Pending;
+            siteSubmission.SubmittedBy = AuthService.CurrentUser?.Id;
+            siteSubmission.SubmittedAt = DateTime.UtcNow;
+            siteSubmission.IsActive = false; // Start as inactive until approved
+            siteSubmission.CreatedAt = DateTime.UtcNow;
+
+            // Submit the site
+            await HeritageSiteService.SubmitForApprovalAsync(siteSubmission);
+            
+            NotificationService.RaiseNotification("Success", 
+                $"Heritage site '{siteSubmission.Name}' submitted successfully! It will be reviewed by an administrator.");
+            
+            ResetSiteForm();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", $"Failed to submit site: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task SubmitPanorama()
+    {
+        if (panoramaSubmission.HeritageSiteId == 0 || 
+            string.IsNullOrWhiteSpace(panoramaSubmission.Title) || 
+            string.IsNullOrWhiteSpace(panoramaSubmission.PanoramaUrl))
+        {
+            NotificationService.RaiseNotification("Error", "Please fill in all required fields (Site, Title, Panorama URL)");
+            return;
+        }
+
+        // Check if the site already has a panorama
+        if (sitesWithPanoramas.Contains(panoramaSubmission.HeritageSiteId))
+        {
+            NotificationService.RaiseNotification("Error", "This site already has a panorama. Each site can only have one panorama.");
+            return;
+        }
+
+        isSubmitting = true;
+        try
+        {
+            // Submit the panorama
+            await PanoramaContentService.SubmitForApprovalAsync(
+                panoramaSubmission.Title,
+                panoramaSubmission.Description,
+                panoramaSubmission.PanoramaUrl,
+                AuthService.CurrentUser?.Id ?? 0,
+                panoramaSubmission.HeritageSiteId
+            );
+            
+            NotificationService.RaiseNotification("Success", 
+                $"Panorama '{panoramaSubmission.Title}' submitted successfully! It will be reviewed by an administrator.");
+            
+            // Update the sites with panoramas list
+            sitesWithPanoramas.Add(panoramaSubmission.HeritageSiteId);
+            
+            ResetPanoramaForm();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", $"Failed to submit panorama: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task SubmitCombinedContent()
+    {
+        if (string.IsNullOrWhiteSpace(combinedSubmission.SiteName) || 
+            string.IsNullOrWhiteSpace(combinedSubmission.SiteDescription) || 
+            string.IsNullOrWhiteSpace(combinedSubmission.SiteLocation) ||
+            string.IsNullOrWhiteSpace(combinedSubmission.PanoramaTitle) ||
+            string.IsNullOrWhiteSpace(combinedSubmission.PanoramaUrl))
+        {
+            NotificationService.RaiseNotification("Error", "Please fill in all required fields (Site Name, Description, Location, Panorama Title, Panorama URL)");
+            return;
+        }
+
+        isSubmitting = true;
+        try
+        {
+            // Create the heritage site first
+            var newSite = new HeritageSite
+            {
+                Name = combinedSubmission.SiteName,
+                Description = combinedSubmission.SiteDescription,
+                Location = combinedSubmission.SiteLocation,
+                Latitude = combinedSubmission.SiteLatitude,
+                Longitude = combinedSubmission.SiteLongitude,
+                Category = combinedSubmission.SiteCategory,
+                HistoricalPeriod = combinedSubmission.SiteHistoricalPeriod,
+                ImageUrl = combinedSubmission.SiteImageUrl,
+                CulturalSignificance = combinedSubmission.SiteCulturalSignificance,
+                VisitingHours = combinedSubmission.SiteVisitingHours,
+                EntryFee = combinedSubmission.SiteEntryFee,
+                ContactInfo = combinedSubmission.SiteContactInfo,
+                Website = combinedSubmission.SiteWebsite,
+                ApprovalStatus = ApprovalStatus.Pending,
+                SubmittedBy = AuthService.CurrentUser?.Id,
+                SubmittedAt = DateTime.UtcNow,
+                IsActive = false,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // Submit the site
+            await HeritageSiteService.SubmitForApprovalAsync(newSite);
+            
+            // Get the newly created site ID (you might need to adjust this based on your service implementation)
+            var submittedSite = await HeritageSiteService.GetAllAsync();
+            var newSiteId = submittedSite.OrderByDescending(s => s.Id).FirstOrDefault()?.Id;
+            
+            if (newSiteId.HasValue)
+            {
+                // Submit the panorama for the new site
+                await PanoramaContentService.SubmitForApprovalAsync(
+                    combinedSubmission.PanoramaTitle,
+                    combinedSubmission.PanoramaDescription,
+                    combinedSubmission.PanoramaUrl,
+                    AuthService.CurrentUser?.Id ?? 0,
+                    newSiteId.Value
+                );
+                
+                NotificationService.RaiseNotification("Success", 
+                    $"Heritage site '{combinedSubmission.SiteName}' with panorama '{combinedSubmission.PanoramaTitle}' submitted successfully! Both will be reviewed by an administrator.");
+            }
+            else
+            {
+                NotificationService.RaiseNotification("Success", 
+                    $"Heritage site '{combinedSubmission.SiteName}' submitted successfully! The panorama will be added after the site is approved.");
+            }
+            
+            ResetCombinedForm();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.RaiseNotification("Error", $"Failed to submit combined content: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+} 
