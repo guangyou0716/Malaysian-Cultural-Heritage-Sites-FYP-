@@ -10,4 +10,4 @@ namespace PenangGoAppFresh.Services
             OnNotificationReceived?.Invoke(title, body);
         }
     }
-} 
+}

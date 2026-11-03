@@ -1,0 +1,127 @@
+/* ============================================
+   PenangGo Material System — L0 / L1 / L2
+   ============================================ */
+
+/* L0 — Content Layer (no blur, no material) */
+.l0-content {
+    position: relative;
+    z-index: var(--z-content);
+}
+
+/* L1 — Material Surface (cards, forms, tables, panels) */
+.l1-material {
+    position: relative;
+    z-index: var(--z-material);
+    background: var(--canvas-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.l1-material-elevated {
+    background: var(--canvas-bg);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+
+@media (prefers-color-scheme: dark) {
+    .l1-material {
+        background: var(--canvas-surface);
+    }
+    .l1-material-elevated {
+        background: #2A2A2C;
+    }
+}
+
+/* L2 — Liquid Glass (nav rail, command bar, bottom dock, sheets, modals) */
+.l2-glass {
+    position: relative;
+    z-index: var(--z-glass);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg),
+                inset 0 1px 0 rgba(255, 255, 255, 0.35),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.l2-glass-subtle {
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md),
+                inset 0 0.5px 0 rgba(255, 255, 255, 0.25);
+}
+
+.l2-glass-dense {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(32px) saturate(1.6);
+    -webkit-backdrop-filter: blur(32px) saturate(1.6);
+    border: 1px solid var(--border-glass-strong);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg),
+                inset 0 1px 0 rgba(255, 255, 255, 0.45),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.15);
+}
+
+@media (prefers-color-scheme: dark) {
+    .l2-glass {
+        background: rgba(40, 40, 42, 0.65);
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: var(--shadow-lg),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    .l2-glass-subtle {
+        background: rgba(40, 40, 42, 0.45);
+    }
+    .l2-glass-dense {
+        background: rgba(40, 40, 42, 0.78);
+    }
+}
+
+/* Fallback for browsers without backdrop-filter */
+@supports not (backdrop-filter: blur(1px)) {
+    .l2-glass,
+    .l2-glass-subtle,
+    .l2-glass-dense {
+        background: rgba(245, 243, 239, 0.95);
+    }
+    @media (prefers-color-scheme: dark) {
+        .l2-glass,
+        .l2-glass-subtle,
+        .l2-glass-dense {
+            background: rgba(30, 30, 32, 0.95);
+        }
+    }
+}
+
+/* Glass interactive hover/press states */
+.l2-glass-interactive {
+    cursor: pointer;
+    transition: transform var(--duration-fast) var(--ease-default),
+                box-shadow var(--duration-normal) var(--ease-default),
+                background var(--duration-normal) var(--ease-default);
+}
+
+.l2-glass-interactive:hover {
+    background: rgba(255, 255, 255, 0.65);
+    box-shadow: var(--shadow-xl),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.l2-glass-interactive:active {
+    transform: scale(0.98);
+    box-shadow: var(--shadow-md);
+}
+
+@media (prefers-color-scheme: dark) {
+    .l2-glass-interactive:hover {
+        background: rgba(50, 50, 52, 0.7);
+    }
+}

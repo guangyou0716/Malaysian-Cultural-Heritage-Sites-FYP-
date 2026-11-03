@@ -1,170 +1,171 @@
 @page "/adminbookings"
 @using Microsoft.JSInterop
 @inject PenangGoAppFresh.Auth.AuthService AuthService
-@inject PenangGoAppFresh.Services.IApiBookingService BookingService
+@inject PenangGoAppFresh.Services.IBookingService BookingService
 @inject PenangGoAppFresh.Services.NotificationService NotificationService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 
-<div class="admin-bookings-container fade-in">
-    <!-- Header Section -->
-    <div class="admin-header">
-        <div class="header-content">
-            <h1 class="page-title">
-                <span class="title-icon">📅</span>
-                Booking Management
-            </h1>
-            <p class="page-subtitle">Manage all event bookings and reservations</p>
-        </div>
-    </div>
+<div>
+    <PenangGoAppFresh.Components.Shared.PageHeader Title="Booking Management" Subtitle="Manage all event bookings and reservations">
+        <PenangGoAppFresh.Components.Shared.StatusBadge Text="Admin" Variant="gold" />
+    </PenangGoAppFresh.Components.Shared.PageHeader>
 
     @if (!AuthService.IsAdmin)
     {
-        <div class="access-denied-section">
-            <div class="access-denied-card">
-                <div class="access-denied-icon">🚫</div>
-                <h3>Access Denied</h3>
-                <p>You do not have admin privileges to access this page</p>
-                <button class="btn btn-primary" @onclick="@(() => NavigationManager.NavigateTo("/dashboard"))">
-                    <span class="btn-icon">🏠</span>
-                    Go to Dashboard
-                </button>
-            </div>
-        </div>
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="Access Denied" Description="You do not have admin privileges to access this page.">
+            <button class="btn-glass btn-primary-heritage" @onclick="@(() => NavigationManager.NavigateTo("/dashboard"))">Go to Dashboard</button>
+        </PenangGoAppFresh.Components.Shared.EmptyState>
     }
     else if (bookings == null)
     {
-        <div class="loading-section">
-            <div class="loading-spinner">
-                <div class="spinner"></div>
-            </div>
-            <p>Loading bookings...</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-16);">
+            @for (int i = 0; i < 4; i++) { <PenangGoAppFresh.Components.Shared.Skeleton Variant="image" Style="height:160px;" /> }
         </div>
     }
     else if (bookings.Count == 0)
     {
-        <div class="empty-state-section">
-            <div class="empty-state-card">
-                <div class="empty-icon">📅</div>
-                <h3>No Bookings Found</h3>
-                <p>There are no bookings in the system yet.</p>
-            </div>
-        </div>
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="No Bookings Found" Description="There are no bookings in the system yet." />
     }
     else
     {
-        <div class="bookings-content">
-            <!-- Statistics Section -->
-            <div class="bookings-stats">
-                <div class="stat-card">
-                    <div class="stat-icon">📅</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@bookings.Count</span>
-                        <span class="stat-label">Total Bookings</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@bookings.Count(b => b.Status == BookingStatus.Confirmed)</span>
-                        <span class="stat-label">Confirmed</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⏳</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@bookings.Count(b => b.Status == BookingStatus.Pending)</span>
-                        <span class="stat-label">Pending</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">❌</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@bookings.Count(b => b.Status == BookingStatus.Cancelled)</span>
-                        <span class="stat-label">Cancelled</span>
-                    </div>
-                </div>
+        <!-- Statistics -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:var(--space-16);margin-bottom:var(--space-24);">
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@bookings.Count</div>
+                <div class="text-sm text-secondary mt-4">Total Bookings</div>
             </div>
-
-            <!-- Filter Section -->
-            <div class="filter-section">
-                <div class="filter-controls">
-                    <select class="form-control" @bind="statusFilter">
-                        <option value="">All Statuses</option>
-                        <option value="@BookingStatus.Pending">Pending</option>
-                        <option value="@BookingStatus.Confirmed">Confirmed</option>
-                        <option value="@BookingStatus.Cancelled">Cancelled</option>
-                    </select>
-                    <input type="text" class="form-control" placeholder="Search by user or event..." @bind="searchTerm" />
-                    <button class="btn btn-outline" @onclick="ClearFilters">
-                        <span class="btn-icon">🔄</span>
-                        Clear Filters
-                    </button>
-                </div>
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@bookings.Count(b => b.Status == BookingStatus.Confirmed)</div>
+                <div class="text-sm text-secondary mt-4">Confirmed</div>
             </div>
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@bookings.Count(b => b.Status == BookingStatus.Pending)</div>
+                <div class="text-sm text-secondary mt-4">Pending</div>
+            </div>
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@bookings.Count(b => b.Status == BookingStatus.Cancelled)</div>
+                <div class="text-sm text-secondary mt-4">Cancelled</div>
+            </div>
+        </div>
 
-            <!-- Event Groups View -->
-            <div class="event-groups">
-                @foreach (var eventGroup in eventGroups)
-                {
-                    <div class="event-group-card fade-in">
-                        <div class="event-group-header">
-                            <div class="event-info">
-                                <h3 class="event-title">@eventGroup.EventTitle</h3>
-                                <div class="event-meta">
-                                    <span class="event-date">@eventGroup.EventDate.ToString("MMM dd, yyyy HH:mm")</span>
-                                    <span class="event-location">📍 @eventGroup.EventLocation</span>
-                                    <span class="event-price">💰 RM @eventGroup.EventPrice?.ToString("F2")</span>
-                                </div>
-                            </div>
-                            <div class="event-stats">
-                                <span class="stat-badge">@eventGroup.Bookings.Count bookings</span>
-                                <span class="stat-badge confirmed">@eventGroup.Bookings.Count(b => b.Status == BookingStatus.Confirmed) confirmed</span>
-                                <span class="stat-badge pending">@eventGroup.Bookings.Count(b => b.Status == BookingStatus.Pending) pending</span>
+        <!-- Filter Section -->
+        <div class="d-flex gap-12 mb-24 items-center" style="flex-wrap:wrap;">
+            <select class="input-glass" @bind="statusFilter" style="min-width:160px;">
+                <option value="">All Statuses</option>
+                <option value="@BookingStatus.Pending">Pending</option>
+                <option value="@BookingStatus.Confirmed">Confirmed</option>
+                <option value="@BookingStatus.Cancelled">Cancelled</option>
+            </select>
+            <input type="text" class="input-glass" placeholder="Search by user or event..." @bind="searchTerm" style="flex:1;min-width:200px;" />
+            <button class="btn-glass btn-sm" @onclick="ClearFilters">Clear Filters</button>
+        </div>
+
+        <!-- Event Groups -->
+        <div style="display:grid;gap:var(--space-16);">
+            @foreach (var eventGroup in eventGroups)
+            {
+                <div class="l1-material" style="padding:var(--space-16);">
+                    <!-- Event Header -->
+                    <div class="d-flex justify-between items-center mb-12" style="flex-wrap:wrap;gap:var(--space-8);">
+                        <div>
+                            <h3 class="text-md font-semibold text-primary">@eventGroup.EventTitle</h3>
+                            <div class="d-flex gap-12 text-xs text-tertiary mt-4">
+                                <span>@eventGroup.EventDate.ToString("MMM dd, yyyy HH:mm")</span>
+                                <span>@eventGroup.EventLocation</span>
+                                @if (eventGroup.EventPrice.HasValue)
+                                {
+                                    <span>RM @eventGroup.EventPrice.Value.ToString("F2")</span>
+                                }
                             </div>
                         </div>
-                        
-                        <div class="event-actions">
+                        <div class="d-flex gap-8 items-center" style="flex-wrap:wrap;">
+                            <PenangGoAppFresh.Components.Shared.StatusBadge Text="@($"{eventGroup.Bookings.Count} bookings")" Variant="neutral" />
+                            <PenangGoAppFresh.Components.Shared.StatusBadge Text="@($"{eventGroup.Bookings.Count(b => b.Status == BookingStatus.Confirmed)} confirmed")" Variant="teal" />
+                            <PenangGoAppFresh.Components.Shared.StatusBadge Text="@($"{eventGroup.Bookings.Count(b => b.Status == BookingStatus.Pending)} pending")" Variant="gold" />
                             @if (eventGroup.Bookings.Any(b => b.Status != BookingStatus.Cancelled))
                             {
-                                <button class="btn btn-danger" @onclick="@(() => CancelEventForAllUsers(eventGroup.EventId, eventGroup.EventTitle))">
-                                    <span class="btn-icon">🚫</span>
-                                    Cancel Event for All Users
-                                </button>
-                            }
-                        </div>
-                        
-                        <div class="bookings-list">
-                            @foreach (var booking in eventGroup.Bookings.OrderByDescending(b => b.BookingTime))
-                            {
-                                <div class="booking-item">
-                                    <div class="booking-user">
-                                        <span class="user-icon">👤</span>
-                                        <span class="user-name">@(booking.User?.Name ?? "Unknown User")</span>
-                                        <span class="user-email">@(booking.User?.Email ?? "")</span>
-                                    </div>
-                                    <div class="booking-status">
-                                        <span class="status-badge @GetStatusClass(booking.Status)">
-                                            @GetStatusIcon(booking.Status) @booking.Status.ToString()
-                                        </span>
-                                    </div>
-                                    <div class="booking-time">
-                                        Booked: @booking.BookingTime.ToString("MMM dd, yyyy HH:mm")
-                                    </div>
-                                </div>
+                                <button class="btn-glass btn-sm btn-accent-heritage" @onclick="@(() => CancelEventForAllUsers(eventGroup.EventId, eventGroup.EventTitle))">Cancel All</button>
                             }
                         </div>
                     </div>
-                }
-            </div>
+
+                    <!-- Bookings Table -->
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--border-subtle, rgba(255,255,255,0.08));">
+                                <th class="text-xs font-medium text-tertiary" style="padding:var(--space-8) var(--space-12);text-align:left;">User</th>
+                                <th class="text-xs font-medium text-tertiary" style="padding:var(--space-8) var(--space-12);text-align:center;">Status</th>
+                                <th class="text-xs font-medium text-tertiary" style="padding:var(--space-8) var(--space-12);text-align:right;">Booked At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var booking in eventGroup.Bookings.OrderByDescending(b => b.BookingTime))
+                            {
+                                <tr style="border-bottom:1px solid var(--border-subtle, rgba(255,255,255,0.04));">
+                                    <td style="padding:var(--space-8) var(--space-12);">
+                                        <div class="text-sm font-medium text-primary">@(booking.User?.Name ?? "Unknown User")</div>
+                                        <div class="text-xs text-tertiary">@(booking.User?.Email ?? "")</div>
+                                    </td>
+                                    <td style="padding:var(--space-8) var(--space-12);text-align:center;">
+                                        @if (booking.Status == BookingStatus.Confirmed)
+                                        {
+                                            <PenangGoAppFresh.Components.Shared.StatusBadge Text="Confirmed" Variant="teal" />
+                                        }
+                                        else if (booking.Status == BookingStatus.Pending)
+                                        {
+                                            <PenangGoAppFresh.Components.Shared.StatusBadge Text="Pending" Variant="gold" />
+                                        }
+                                        else if (booking.Status == BookingStatus.Cancelled)
+                                        {
+                                            <PenangGoAppFresh.Components.Shared.StatusBadge Text="Cancelled" Variant="terracotta" />
+                                        }
+                                    </td>
+                                    <td style="padding:var(--space-8) var(--space-12);text-align:right;">
+                                        <span class="text-sm text-secondary">@booking.BookingTime.ToString("MMM dd, yyyy HH:mm")</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     }
 </div>
+
+<!-- Confirm Dialog -->
+<PenangGoAppFresh.Components.Shared.ConfirmDialog IsVisible="showConfirm" Title="@confirmTitle" Message="@confirmMessage" IsDestructive="@confirmDestructive" OnConfirm="RunConfirm" OnCancel="CancelConfirm" />
 
 @code {
     private List<PenangGoApp.DataAccess.Booking> bookings;
     private BookingStatus? statusFilter;
     private string searchTerm = "";
+
+    // Shared confirm dialog
+    private bool showConfirm;
+    private string confirmTitle = "Confirm";
+    private string confirmMessage = "";
+    private bool confirmDestructive = true;
+    private Func<Task>? confirmAction;
+
+    private void OpenConfirm(string title, string message, Func<Task> action, bool destructive = true)
+    {
+        confirmTitle = title;
+        confirmMessage = message;
+        confirmAction = action;
+        confirmDestructive = destructive;
+        showConfirm = true;
+    }
+
+    private async Task RunConfirm()
+    {
+        showConfirm = false;
+        if (confirmAction != null)
+            await confirmAction();
+    }
+
+    private void CancelConfirm() => showConfirm = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -214,7 +215,7 @@
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                filtered = filtered.Where(b => 
+                filtered = filtered.Where(b =>
                     (b.User?.Name?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true) ||
                     (b.Event?.Title?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) == true));
             }
@@ -223,24 +224,26 @@
         }
     }
 
-    private async Task CancelEventForAllUsers(int eventId, string eventTitle)
+    private void CancelEventForAllUsers(int eventId, string eventTitle)
+    {
+        var activeCount = bookings.Count(b => b.EventId == eventId && b.Status != BookingStatus.Cancelled);
+        if (activeCount == 0)
+        {
+            NotificationService.RaiseNotification("Info", "No active bookings found for this event");
+            return;
+        }
+
+        OpenConfirm("Cancel Event",
+            $"Cancel the event '{eventTitle}' for all {activeCount} users? This action cannot be undone.",
+            () => CancelEventForAllUsersConfirmed(eventId, eventTitle));
+    }
+
+    private async Task CancelEventForAllUsersConfirmed(int eventId, string eventTitle)
     {
         try
         {
             // Get all bookings for this event that are not already cancelled
             var eventBookings = bookings.Where(b => b.EventId == eventId && b.Status != BookingStatus.Cancelled).ToList();
-            
-            if (!eventBookings.Any())
-            {
-                NotificationService.RaiseNotification("Info", "No active bookings found for this event");
-                return;
-            }
-
-            // Show confirmation dialog
-            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-                $"Are you sure you want to cancel the event '{eventTitle}' for all {eventBookings.Count} users? This action cannot be undone.");
-
-            if (!confirmed) return;
 
             // Cancel all bookings for this event
             var successCount = 0;
@@ -274,12 +277,12 @@
 
             if (failureCount == 0)
             {
-                NotificationService.RaiseNotification("Success", 
+                NotificationService.RaiseNotification("Success",
                     $"Successfully cancelled event '{eventTitle}' for all {successCount} users");
             }
             else
             {
-                NotificationService.RaiseNotification("Warning", 
+                NotificationService.RaiseNotification("Warning",
                     $"Cancelled {successCount} bookings, but {failureCount} failed. Please check the logs.");
             }
         }
@@ -310,10 +313,10 @@
     {
         return status switch
         {
-            BookingStatus.Pending => "⏳",
-            BookingStatus.Confirmed => "✅",
-            BookingStatus.Cancelled => "❌",
-            _ => "❓"
+            BookingStatus.Pending => "",
+            BookingStatus.Confirmed => "",
+            BookingStatus.Cancelled => "",
+            _ => ""
         };
     }
 
@@ -326,4 +329,4 @@
         public decimal? EventPrice { get; set; }
         public List<PenangGoApp.DataAccess.Booking> Bookings { get; set; } = new();
     }
-} 
+}

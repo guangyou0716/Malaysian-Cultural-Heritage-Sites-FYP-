@@ -1,139 +1,88 @@
 @page "/payment"
-@using PenangGoAppFresh.Services
 @inject NavigationManager Navigation
 @inject PenangGoAppFresh.Services.NotificationService NotificationService
-@inject PenangGoAppFresh.Services.IApiBookingService BookingService
+@inject PenangGoAppFresh.Services.IBookingService BookingService
 @inject PenangGoAppFresh.Auth.AuthService AuthService
 
-<div class="payment-container fade-in">
-    <div class="payment-card">
-        <div class="payment-header">
-            <h1 class="payment-title">Complete Your Booking</h1>
-            <p class="payment-subtitle">Please complete your payment to confirm your booking</p>
+<div class="payment-page" style="max-width:480px;margin:0 auto;">
+    <PenangGoAppFresh.Components.Shared.PageHeader Title="Complete Booking" ShowBack="true" BackHref="/events" />
+
+    <!-- Sandbox Banner -->
+    <div class="l2-glass-subtle" style="padding:var(--space-12) var(--space-16);border-radius:var(--radius-md);margin-bottom:var(--space-24);display:flex;align-items:center;gap:var(--space-8);">
+        <span class="badge badge-gold">Sandbox</span>
+        <span class="text-xs text-secondary">Demo mode — no real payment will be processed</span>
+    </div>
+
+    @if (eventDetails != null)
+    {
+        <!-- Event Summary -->
+        <div class="l1-material" style="padding:var(--space-20);margin-bottom:var(--space-24);">
+            <h3 class="text-md font-semibold mb-12">Event Summary</h3>
+            <div class="d-flex justify-between mb-8">
+                <span class="text-sm text-secondary">Event</span>
+                <span class="text-sm font-medium">@eventDetails.EventTitle</span>
+            </div>
+            <div class="d-flex justify-between mb-8">
+                <span class="text-sm text-secondary">Date</span>
+                <span class="text-sm font-medium">@eventDetails.EventDate.ToString("MMM dd, yyyy")</span>
+            </div>
+            <div class="d-flex justify-between mb-8">
+                <span class="text-sm text-secondary">Location</span>
+                <span class="text-sm font-medium">@eventDetails.EventLocation</span>
+            </div>
+            <div style="height:1px;background:var(--border-subtle);margin:var(--space-12) 0;"></div>
+            <div class="d-flex justify-between">
+                <span class="text-md font-semibold">Total</span>
+                <span class="text-md font-bold text-teal">@eventDetails.EventPrice</span>
+            </div>
         </div>
 
-        @if (eventDetails != null)
-        {
-            <div class="event-summary">
-                <h3>Event Summary</h3>
-                <div class="summary-item">
-                    <span class="summary-label">Event:</span>
-                    <span class="summary-value">@eventDetails.EventTitle</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">Date:</span>
-                    <span class="summary-value">@eventDetails.EventDate.ToString("MMM dd, yyyy")</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">Time:</span>
-                    <span class="summary-value">@eventDetails.EventTime</span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">Location:</span>
-                    <span class="summary-value">@eventDetails.EventLocation</span>
-                </div>
-                <div class="summary-item total">
-                    <span class="summary-label">Total Amount:</span>
-                    <span class="summary-value price">@eventDetails.EventPrice</span>
-                </div>
-            </div>
+        <!-- Confirmation -->
+        <div class="l1-material" style="padding:var(--space-20);margin-bottom:var(--space-24);">
+            <p class="text-sm text-secondary" style="margin:0;line-height:var(--leading-relaxed);">
+                By confirming, you agree to the event terms. A booking confirmation will be sent to your registered email.
+            </p>
+        </div>
 
-            <div class="payment-form">
-                <h3>Payment Information</h3>
-                
-                <div class="form-group">
-                    <label>Card Number</label>
-                    <input type="text" class="form-control" placeholder="1234 5678 9012 3456" @bind="cardNumber" />
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Expiry Date</label>
-                        <input type="text" class="form-control" placeholder="MM/YY" @bind="expiryDate" />
-                    </div>
-                    <div class="form-group">
-                        <label>CVV</label>
-                        <input type="text" class="form-control" placeholder="123" @bind="cvv" />
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Cardholder Name</label>
-                    <input type="text" class="form-control" placeholder="John Doe" @bind="cardholderName" />
-                </div>
-                
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" class="form-control" placeholder="john@example.com" @bind="email" />
-                </div>
-            </div>
-
-            <div class="payment-actions">
-                <button class="btn btn-primary" @onclick="ProcessPayment" disabled="@isProcessing">
-                    @if (isProcessing)
-                    {
-                        <span class="loading-spinner"></span>
-                        <span>Processing...</span>
-                    }
-                    else
-                    {
-                        <span class="btn-icon">💳</span>
-                        <span>Pay @eventDetails.EventPrice</span>
-                    }
-                </button>
-                <button class="btn btn-outline" @onclick="@(() => Navigation.NavigateTo("/events"))">
-                    <span class="btn-icon">❌</span>
-                    Cancel
-                </button>
-            </div>
-        }
-        else
-        {
-            <div class="error-message">
-                <p>No event details found. Please try booking again.</p>
-                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/events"))">
-                    <span class="btn-icon">🎫</span>
-                    Browse Events
-                </button>
-            </div>
-        }
-    </div>
+        <div class="d-flex gap-12">
+            <button class="btn-glass btn-primary-heritage btn-lg flex-1" @onclick="ConfirmBooking" disabled="@isProcessing">
+                @if (isProcessing)
+                {
+                    <span>Processing...</span>
+                }
+                else
+                {
+                    <span>Confirm Booking</span>
+                }
+            </button>
+            <button class="btn-glass btn-lg" @onclick="@(() => Navigation.NavigateTo("/events"))">
+                Cancel
+            </button>
+        </div>
+    }
+    else
+    {
+        <PenangGoAppFresh.Components.Shared.EmptyState
+            Title="No event selected"
+            Description="Please select an event to book."
+            Icon="🎫">
+            <button class="btn-glass btn-primary-heritage" @onclick="@(() => Navigation.NavigateTo("/events"))">
+                Browse Events
+            </button>
+        </PenangGoAppFresh.Components.Shared.EmptyState>
+    }
 </div>
 
 @code {
     private EventPaymentDetails? eventDetails;
     private bool isProcessing = false;
-    
-    // Form fields
-    private string cardNumber = "";
-    private string expiryDate = "";
-    private string cvv = "";
-    private string cardholderName = "";
-    private string email = "";
 
-    [Parameter]
-    [SupplyParameterFromQuery]
-    public string? EventTitle { get; set; }
-
-    [Parameter]
-    [SupplyParameterFromQuery]
-    public string? EventDate { get; set; }
-
-    [Parameter]
-    [SupplyParameterFromQuery]
-    public string? EventTime { get; set; }
-
-    [Parameter]
-    [SupplyParameterFromQuery]
-    public string? EventLocation { get; set; }
-
-    [Parameter]
-    [SupplyParameterFromQuery]
-    public string? EventPrice { get; set; }
-
-    [Parameter]
-    [SupplyParameterFromQuery]
-    public string? EventId { get; set; }
+    [Parameter] public string? EventTitle { get; set; }
+    [Parameter] public string? EventDate { get; set; }
+    [Parameter] public string? EventTime { get; set; }
+    [Parameter] public string? EventLocation { get; set; }
+    [Parameter] public string? EventPrice { get; set; }
+    [Parameter] public string? EventId { get; set; }
 
     protected override void OnInitialized()
     {
@@ -151,16 +100,8 @@
         }
     }
 
-    private async Task ProcessPayment()
+    private async Task ConfirmBooking()
     {
-        if (string.IsNullOrEmpty(cardNumber) || string.IsNullOrEmpty(expiryDate) || 
-            string.IsNullOrEmpty(cvv) || string.IsNullOrEmpty(cardholderName) || 
-            string.IsNullOrEmpty(email))
-        {
-            NotificationService.RaiseNotification("Validation Error", "Please fill in all payment fields.");
-            return;
-        }
-
         if (AuthService == null || !AuthService.IsLoggedIn)
         {
             NotificationService.RaiseNotification("Login Required", "Please log in to complete your booking.");
@@ -173,10 +114,6 @@
 
         try
         {
-            // Simulate payment processing
-            await Task.Delay(2000);
-
-            // Create actual booking in database
             var eventId = int.TryParse(eventDetails?.EventId, out var id) ? id : 0;
             if (eventId == 0)
             {
@@ -185,11 +122,10 @@
                 return;
             }
 
-            var booking = await BookingService.BookEventAsync(AuthService.CurrentUser.Id, eventId);
-            
+            var booking = await BookingService.BookEventAsync(AuthService.CurrentUser!.Id, eventId);
+
             if (booking != null)
             {
-                // Redirect to booking success page with all details
                 var queryParams = new Dictionary<string, string>
                 {
                     ["EventTitle"] = eventDetails?.EventTitle ?? "",
@@ -199,7 +135,6 @@
                     ["EventPrice"] = eventDetails?.EventPrice ?? "",
                     ["BookingId"] = booking.Id.ToString()
                 };
-
                 var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
                 Navigation.NavigateTo($"/booking-success?{queryString}");
             }
@@ -209,10 +144,9 @@
                 isProcessing = false;
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Payment processing error: {ex.Message}");
-            NotificationService.RaiseNotification("Payment Error", "An error occurred during payment processing. Please try again.");
+            NotificationService.RaiseNotification("Error", "An error occurred. Please try again.");
             isProcessing = false;
         }
     }
@@ -226,4 +160,4 @@
         public string EventPrice { get; set; } = "";
         public string EventId { get; set; } = "";
     }
-} 
+}

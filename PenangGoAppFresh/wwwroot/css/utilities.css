@@ -1,0 +1,206 @@
+/* ============================================
+   PenangGo Utility Classes
+   ============================================ */
+
+/* --- Display --- */
+.d-none { display: none; }
+.d-block { display: block; }
+.d-flex { display: flex; }
+.d-inline-flex { display: inline-flex; }
+.d-grid { display: grid; }
+
+/* --- Flex --- */
+.flex-col { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-1 { flex: 1; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-end { justify-content: flex-end; }
+.gap-4 { gap: var(--space-4); }
+.gap-8 { gap: var(--space-8); }
+.gap-12 { gap: var(--space-12); }
+.gap-16 { gap: var(--space-16); }
+.gap-24 { gap: var(--space-24); }
+
+/* --- Spacing --- */
+.p-0 { padding: 0; }
+.p-8 { padding: var(--space-8); }
+.p-12 { padding: var(--space-12); }
+.p-16 { padding: var(--space-16); }
+.p-24 { padding: var(--space-24); }
+.px-16 { padding-left: var(--space-16); padding-right: var(--space-16); }
+.px-24 { padding-left: var(--space-24); padding-right: var(--space-24); }
+.py-8 { padding-top: var(--space-8); padding-bottom: var(--space-8); }
+.py-16 { padding-top: var(--space-16); padding-bottom: var(--space-16); }
+.m-0 { margin: 0; }
+.mb-4 { margin-bottom: var(--space-4); }
+.mb-8 { margin-bottom: var(--space-8); }
+.mb-16 { margin-bottom: var(--space-16); }
+.mb-24 { margin-bottom: var(--space-24); }
+.mt-16 { margin-top: var(--space-16); }
+.mt-24 { margin-top: var(--space-24); }
+
+/* --- Typography --- */
+.text-xs { font-size: var(--text-xs); }
+.text-sm { font-size: var(--text-sm); }
+.text-base { font-size: var(--text-base); }
+.text-md { font-size: var(--text-md); }
+.text-lg { font-size: var(--text-lg); }
+.text-xl { font-size: var(--text-xl); }
+.text-2xl { font-size: var(--text-2xl); }
+.text-3xl { font-size: var(--text-3xl); }
+.font-regular { font-weight: var(--weight-regular); }
+.font-medium { font-weight: var(--weight-medium); }
+.font-semibold { font-weight: var(--weight-semibold); }
+.font-bold { font-weight: var(--weight-bold); }
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.text-teal { color: var(--heritage-teal); }
+.text-terracotta { color: var(--heritage-terracotta); }
+.text-gold { color: var(--heritage-gold); }
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.tracking-tight { letter-spacing: var(--tracking-tight); }
+.tracking-wide { letter-spacing: var(--tracking-wide); }
+.leading-tight { line-height: var(--leading-tight); }
+.leading-relaxed { line-height: var(--leading-relaxed); }
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* --- Sizing --- */
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.max-w-sm { max-width: 380px; }
+.max-w-md { max-width: 560px; }
+.max-w-lg { max-width: 760px; }
+.max-w-xl { max-width: 960px; }
+
+/* --- Overflow --- */
+.overflow-hidden { overflow: hidden; }
+.overflow-auto { overflow: auto; }
+.overflow-y-auto { overflow-y: auto; }
+
+/* --- Position --- */
+.relative { position: relative; }
+.absolute { position: absolute; }
+.fixed { position: fixed; }
+.sticky { position: sticky; }
+.inset-0 { inset: 0; }
+
+/* --- Border Radius --- */
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-xl { border-radius: var(--radius-xl); }
+.rounded-pill { border-radius: var(--radius-pill); }
+
+/* --- Transitions --- */
+.transition-fast { transition: all var(--duration-fast) var(--ease-default); }
+.transition-normal { transition: all var(--duration-normal) var(--ease-default); }
+.transition-slow { transition: all var(--duration-slow) var(--ease-default); }
+
+/* --- Accessibility --- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* --- Responsive Grid --- */
+.grid-auto-fill {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-16);
+}
+
+.grid-auto-fill-sm {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-12);
+}
+
+/* --- Responsive Visibility --- */
+@media (max-width: 767px) {
+    .hide-mobile { display: none !important; }
+}
+
+@media (min-width: 768px) {
+    .hide-desktop { display: none !important; }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .hide-tablet { display: none !important; }
+}
+
+/* --- Map marker clusters --- */
+.site-cluster-icon {
+    background: transparent;
+    border: none;
+}
+
+.site-cluster {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--heritage-teal, #0E746A);
+    color: #fff;
+    font-size: var(--text-sm, 13px);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* --- Map two-pane desktop layout --- */
+@media (min-width: 1024px) {
+    .map-layout {
+        display: grid;
+        grid-template-columns: minmax(320px, 420px) 1fr;
+        gap: var(--space-16);
+        align-items: start;
+    }
+
+    .map-pane {
+        position: sticky;
+        top: var(--space-16);
+    }
+
+    .map-pane #map {
+        height: calc(100vh - 300px) !important;
+        min-height: 480px;
+        max-height: 720px;
+    }
+
+    .results-pane .grid-auto-fill-sm {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+}

@@ -10,4 +10,4 @@ namespace PenangGoApi.DTOs
         public UserDto? User { get; set; }
         public EventDto? Event { get; set; }
     }
-} 
+}

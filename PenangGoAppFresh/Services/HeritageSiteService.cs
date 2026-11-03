@@ -1,139 +1,66 @@
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text.Json;
 using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
 using PenangGoApp.DataAccess;
-using System;
 
 namespace PenangGoAppFresh.Services
 {
     public class HeritageSiteService
     {
-        private readonly HttpClient _httpClient = new HttpClient();
-        private static string BaseUrl
-        {
-            get
-            {
-                if (DeviceInfo.Platform == DevicePlatform.Android)
-                {
-                    return DeviceInfo.DeviceType == DeviceType.Physical
-                        ? "http://192.168.0.20:7000" // Physical Android device
-                        : "http://10.0.2.2:7000"; // Android emulator
-                }
-                else if (DeviceInfo.Platform == DevicePlatform.iOS)
-                {
-                    return "http://localhost:7000"; // iOS simulator
-                }
-                else if (DeviceInfo.Platform == DevicePlatform.WinUI)
-                {
-                    return "http://localhost:7000"; // Windows
-                }
-                else if (DeviceInfo.Platform == DevicePlatform.macOS)
-                {
-                    return "http://localhost:7000"; // macOS
-                }
-                else
-                {
-                    return "http://localhost:7000"; // Default fallback
-                }
-            }
-        }
+        private readonly HttpClient _httpClient;
+        private readonly JsonSerializerOptions _jsonOptions;
 
-        // DTO for deserialization
-        private class HeritageSiteDto
+        public HeritageSiteService(HttpClient httpClient)
         {
-            public int Id { get; set; }
-            public string Name { get; set; }
-            public string? Description { get; set; }
-            public string? Location { get; set; }
-            public bool IsActive { get; set; }
-            public string? Category { get; set; }
-            public string? HistoricalPeriod { get; set; }
-            public string? ImageUrl { get; set; }
-            public double AverageRating { get; set; }
-            public int TotalReviews { get; set; }
-            public bool HasPanoramaContent { get; set; }
-            public ApprovalStatus ApprovalStatus { get; set; }
-            public DateTime? SubmittedAt { get; set; }
-            public DateTime? ApprovedAt { get; set; }
-            public string? ApprovalNotes { get; set; }
-        }
-
-        private HeritageSite MapDtoToModel(HeritageSiteDto dto)
-        {
-            return new HeritageSite
-            {
-                Id = dto.Id,
-                Name = dto.Name,
-                Description = dto.Description ?? string.Empty,
-                Location = dto.Location ?? string.Empty,
-                IsActive = dto.IsActive,
-                Category = dto.Category,
-                HistoricalPeriod = dto.HistoricalPeriod,
-                ImageUrl = dto.ImageUrl,
-                AverageRating = dto.AverageRating,
-                TotalReviews = dto.TotalReviews,
-                HasPanoramaContent = dto.HasPanoramaContent,
-                ApprovalStatus = (PenangGoApp.DataAccess.ApprovalStatus)dto.ApprovalStatus,
-                SubmittedAt = dto.SubmittedAt,
-                ApprovedAt = dto.ApprovedAt,
-                ApprovalNotes = dto.ApprovalNotes
-            };
+            _httpClient = httpClient;
+            _jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         }
 
         public async Task<List<HeritageSite>> GetAllAsync()
         {
-            var response = await _httpClient.GetAsync($"{BaseUrl}/api/heritagesites");
+            var response = await _httpClient.GetAsync("api/heritagesites");
             response.EnsureSuccessStatusCode();
             var json = await response.Content.ReadAsStringAsync();
-            var dtos = JsonSerializer.Deserialize<List<HeritageSiteDto>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            var result = new List<HeritageSite>();
-            if (dtos != null)
-            {
-                foreach (var dto in dtos)
-                {
-                    result.Add(MapDtoToModel(dto));
-                }
-            }
-            return result;
+            return JsonSerializer.Deserialize<List<HeritageSite>>(json, _jsonOptions) ?? new();
         }
 
-        public async Task<HeritageSite> GetByIdAsync(int id)
+        public async Task<List<HeritageSite>> GetAllForManagementAsync()
         {
-            var response = await _httpClient.GetAsync($"{BaseUrl}/api/heritagesites/{id}");
+            var response = await _httpClient.GetAsync("api/heritagesites/manage");
             response.EnsureSuccessStatusCode();
             var json = await response.Content.ReadAsStringAsync();
-            var dto = JsonSerializer.Deserialize<HeritageSiteDto>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            return dto != null ? MapDtoToModel(dto) : null;
+            return JsonSerializer.Deserialize<List<HeritageSite>>(json, _jsonOptions) ?? new();
+        }
+
+        public async Task<HeritageSite?> GetByIdAsync(int id)
+        {
+            var response = await _httpClient.GetAsync($"api/heritagesites/{id}");
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<HeritageSite>(json, _jsonOptions);
         }
 
         public async Task AddAsync(HeritageSite site)
         {
-            var json = JsonSerializer.Serialize(site);
+            var json = JsonSerializer.Serialize(site, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{BaseUrl}/api/heritagesites", content);
-            response.EnsureSuccessStatusCode();
+            await _httpClient.PostAsync("api/heritagesites", content);
         }
 
         public async Task DeleteAsync(int id)
         {
-            var response = await _httpClient.DeleteAsync($"{BaseUrl}/api/heritagesites/{id}");
-            response.EnsureSuccessStatusCode();
+            await _httpClient.DeleteAsync($"api/heritagesites/{id}");
         }
 
         public async Task UpdateAsync(HeritageSite site)
         {
-            var json = JsonSerializer.Serialize(site);
+            var json = JsonSerializer.Serialize(site, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PutAsync($"{BaseUrl}/api/heritagesites/{site.Id}", content);
-            response.EnsureSuccessStatusCode();
+            await _httpClient.PutAsync($"api/heritagesites/{site.Id}", content);
         }
 
         public async Task ApproveSiteAsync(int siteId)
         {
-            var response = await _httpClient.PutAsync($"{BaseUrl}/api/heritagesites/{siteId}/approve", null);
-            response.EnsureSuccessStatusCode();
+            await _httpClient.PutAsync($"api/heritagesites/{siteId}/approve", null);
         }
 
         public async Task RejectSiteAsync(int siteId, string reason)
@@ -141,20 +68,42 @@ namespace PenangGoAppFresh.Services
             var request = new { Reason = reason };
             var json = JsonSerializer.Serialize(request);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PutAsync($"{BaseUrl}/api/heritagesites/{siteId}/reject", content);
-            response.EnsureSuccessStatusCode();
+            await _httpClient.PutAsync($"api/heritagesites/{siteId}/reject", content);
         }
 
         public async Task SubmitForApprovalAsync(HeritageSite site)
         {
-            // Set submission details
-            site.ApprovalStatus = (PenangGoApp.DataAccess.ApprovalStatus)ApprovalStatus.Pending;
-            site.SubmittedAt = DateTime.UtcNow;
-            site.IsActive = false; // Start as inactive until approved
-            var json = JsonSerializer.Serialize(site);
+            var json = JsonSerializer.Serialize(new
+            {
+                name = site.Name,
+                description = site.Description,
+                location = site.Location,
+                latitude = site.Latitude,
+                longitude = site.Longitude,
+                category = site.Category,
+                historicalPeriod = site.HistoricalPeriod,
+                culturalSignificance = site.CulturalSignificance,
+                visitingHours = site.VisitingHours,
+                entryFee = site.EntryFee,
+                contactInfo = site.ContactInfo,
+                website = site.Website,
+                isAccessible = site.IsAccessible,
+                imageUrl = site.ImageUrl
+            }, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{BaseUrl}/api/heritagesites", content);
-            response.EnsureSuccessStatusCode();
+            await _httpClient.PostAsync("api/heritagesites/submissions", content);
+        }
+
+        public async Task<List<HeritageSite>> GetMySubmissionsAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("api/heritagesites/my-submissions");
+                response.EnsureSuccessStatusCode();
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<List<HeritageSite>>(json, _jsonOptions) ?? new();
+            }
+            catch { return new List<HeritageSite>(); }
         }
     }
-} 
+}

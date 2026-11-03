@@ -1,151 +1,135 @@
 @page "/booking"
-@inject PenangGoAppFresh.Services.IApiBookingService BookingService
+@inject PenangGoAppFresh.Services.IBookingService BookingService
 @inject PenangGoAppFresh.Auth.AuthService AuthService
 @inject PenangGoAppFresh.Services.NotificationService NotificationService
 @inject NavigationManager Navigation
 
-<div class="booking-container fade-in">
-    <!-- Header Section -->
-    <div class="booking-header">
-        <div class="header-content">
-            <h1 class="page-title">
-                <span class="title-icon">📅</span>
-                My Bookings
-            </h1>
-            <p class="page-subtitle">Manage your cultural event reservations and bookings</p>
-        </div>
-    </div>
+<div class="l0-content" style="padding:var(--space-16);">
+    <PenangGoAppFresh.Components.Shared.PageHeader Title="My Bookings" Subtitle="Manage your cultural event reservations and bookings" />
 
     @if (AuthService == null || !AuthService.IsLoggedIn)
     {
-        <div class="auth-required-section">
-            <div class="auth-card">
-                <div class="auth-icon">🔐</div>
-                <h3>Authentication Required</h3>
-                <p>Please log in to view and manage your bookings</p>
-                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/login"))">
-                    <span class="btn-icon">🔑</span>
-                    Login Now
-                </button>
+        <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-24 text-center" Style="max-width:480px;margin:var(--space-48) auto;">
+            <div style="margin-bottom:var(--space-16);">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
-        </div>
+            <h3 class="text-lg font-semibold text-primary mb-8">Authentication Required</h3>
+            <p class="text-sm text-secondary mb-24">Please log in to view and manage your bookings</p>
+            <button class="btn-glass btn-primary-heritage" @onclick="@(() => Navigation.NavigateTo("/login"))">Login Now</button>
+        </PenangGoAppFresh.Components.Shared.GlassSurface>
     }
     else if (bookings == null)
     {
-        <div class="loading-section">
-            <div class="loading-spinner">
-                <div class="spinner"></div>
-            </div>
-            <p>Loading your bookings...</p>
+        <div class="d-grid gap-16" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));">
+            @for (int i = 0; i < 3; i++)
+            {
+                <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16">
+                    <PenangGoAppFresh.Components.Shared.Skeleton Variant="title" />
+                    <PenangGoAppFresh.Components.Shared.Skeleton Variant="text" />
+                    <PenangGoAppFresh.Components.Shared.Skeleton Variant="text" Style="width:60%;" />
+                </PenangGoAppFresh.Components.Shared.GlassSurface>
+            }
         </div>
     }
     else if (bookings.Count == 0)
     {
-        <div class="empty-state-section">
-            <div class="empty-state-card">
-                <div class="empty-icon">📋</div>
-                <h3>No Bookings Yet</h3>
-                <p>You haven't made any event bookings yet. Start exploring cultural events!</p>
-                <div class="empty-actions">
-                    <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/events"))">
-                        <span class="btn-icon">🎉</span>
-                        Browse Events
-                    </button>
-                    <button class="btn btn-outline" @onclick="@(() => Navigation.NavigateTo("/map"))">
-                        <span class="btn-icon">🗺️</span>
-                        Explore Map
-                    </button>
-                </div>
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="No Bookings Yet" Description="You haven't made any event bookings yet. Start exploring cultural events!">
+            <div class="d-flex gap-8">
+                <button class="btn-glass btn-primary-heritage" @onclick="@(() => Navigation.NavigateTo("/events"))">Browse Events</button>
+                <button class="btn-glass" @onclick="@(() => Navigation.NavigateTo("/map"))">Explore Map</button>
             </div>
-        </div>
+        </PenangGoAppFresh.Components.Shared.EmptyState>
     }
     else
     {
-        <div class="bookings-content">
-            <div class="bookings-stats">
-                <div class="stat-card">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@bookings.Count</span>
-                        <span class="stat-label">Total Bookings</span>
-                    </div>
+        <!-- Stats -->
+        <div class="d-grid gap-12 mb-24" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));">
+            <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16 d-flex items-center gap-12">
+                <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(26,122,109,0.1);display:flex;align-items:center;justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-teal)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@bookings.Count(b => b.Status == PenangGoApp.DataAccess.BookingStatus.Confirmed)</span>
-                        <span class="stat-label">Confirmed</span>
-                    </div>
+                <div>
+                    <div class="text-xl font-bold text-primary">@bookings.Count</div>
+                    <div class="text-xs text-secondary">Total Bookings</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⏳</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@bookings.Count(b => b.Status == PenangGoApp.DataAccess.BookingStatus.Pending)</span>
-                        <span class="stat-label">Pending</span>
-                    </div>
-                </div>
-            </div>
+            </PenangGoAppFresh.Components.Shared.GlassSurface>
 
-            <div class="bookings-grid">
-                @foreach (var booking in bookings.OrderByDescending(b => b.BookingTime))
-                {
-                    <div class="booking-card fade-in clickable" @onclick="@(() => Navigation.NavigateTo($"/event/{booking.EventId}"))">
-                        <div class="booking-header-card">
-                            @if (!string.IsNullOrEmpty(booking.Event.ImageUrl))
-                            {
-                                <div class="booking-image" style="background-image: url('@booking.Event.ImageUrl');">
-                                    <div class="booking-overlay"></div>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="booking-image-placeholder">
-                                    <span class="placeholder-icon">🎭</span>
-                                </div>
-                            }
-                            <div class="booking-status-badge @GetStatusClass(booking.Status.ToString())">
-                                @booking.Status.ToString()
+            <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16 d-flex items-center gap-12">
+                <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(45,138,78,0.1);display:flex;align-items:center;justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div>
+                    <div class="text-xl font-bold text-primary">@bookings.Count(b => b.Status == PenangGoApp.DataAccess.BookingStatus.Confirmed)</div>
+                    <div class="text-xs text-secondary">Confirmed</div>
+                </div>
+            </PenangGoAppFresh.Components.Shared.GlassSurface>
+
+            <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16 d-flex items-center gap-12">
+                <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(184,146,63,0.1);display:flex;align-items:center;justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-gold)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div>
+                    <div class="text-xl font-bold text-primary">@bookings.Count(b => b.Status == PenangGoApp.DataAccess.BookingStatus.Pending)</div>
+                    <div class="text-xs text-secondary">Pending</div>
+                </div>
+            </PenangGoAppFresh.Components.Shared.GlassSurface>
+        </div>
+
+        <!-- Bookings Grid -->
+        <div class="d-grid gap-16" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr));">
+            @foreach (var booking in bookings.OrderByDescending(b => b.BookingTime))
+            {
+                <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="transition-fast" Style="cursor:pointer;overflow:hidden;" @onclick="@(() => Navigation.NavigateTo($"/event/{booking.EventId}"))">
+                    <!-- Image / Header -->
+                    @if (!string.IsNullOrEmpty(booking.Event.ImageUrl))
+                    {
+                        <div style="position:relative;height:140px;background-image:url('@booking.Event.ImageUrl');background-size:cover;background-position:center;">
+                            <div style="position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,0.4));"></div>
+                            <div style="position:absolute;top:var(--space-12);right:var(--space-12);">
+                                <PenangGoAppFresh.Components.Shared.StatusBadge Text="@booking.Status.ToString()" Variant="@GetStatusClass(booking.Status.ToString())" />
                             </div>
                         </div>
-                        
-                        <div class="booking-body">
-                            <h3 class="booking-title">@booking.Event.Name</h3>
-                            
-                            <div class="booking-details">
-                                <div class="detail-item">
-                                    <span class="detail-icon">📅</span>
-                                    <span class="detail-text">@booking.Event.Date.ToString("dddd, MMMM dd, yyyy")</span>
-                                </div>
-                                
-                                <div class="detail-item">
-                                    <span class="detail-icon">🕒</span>
-                                    <span class="detail-text">@booking.Event.Date.ToString("HH:mm")</span>
-                                </div>
-                                
-                                <div class="detail-item">
-                                    <span class="detail-icon">📍</span>
-                                    <span class="detail-text">@booking.Event.Location</span>
-                                </div>
-                                
-                                <div class="detail-item">
-                                    <span class="detail-icon">💳</span>
-                                    <span class="detail-text">Booked on @booking.BookingTime.ToString("MMM dd, yyyy 'at' HH:mm")</span>
-                                </div>
-                            </div>
-                            
-                            <div class="booking-actions">
-                                @if (booking.Status == PenangGoApp.DataAccess.BookingStatus.Pending)
-                                {
-                                    <button class="btn btn-sm btn-danger" @onclick="@(() => CancelBooking(booking.Id))" @onclick:stopPropagation="true">
-                                        <span class="btn-icon">❌</span>
-                                        Cancel
-                                    </button>
-                                }
+                    }
+                    else
+                    {
+                        <div style="position:relative;height:100px;background:var(--heritage-teal);display:flex;align-items:center;justify-content:center;">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--on-teal)" stroke-width="1.5" opacity="0.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            <div style="position:absolute;top:var(--space-12);right:var(--space-12);">
+                                <PenangGoAppFresh.Components.Shared.StatusBadge Text="@booking.Status.ToString()" Variant="@GetStatusClass(booking.Status.ToString())" />
                             </div>
                         </div>
+                    }
+
+                    <!-- Body -->
+                    <div class="p-16">
+                        <h3 class="text-md font-semibold text-primary mb-12 truncate">@booking.Event.Title</h3>
+
+                        <div class="d-flex flex-col gap-8 mb-16">
+                            <div class="d-flex items-center gap-8">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                <span class="text-sm text-secondary">@booking.Event.StartTime.ToString("dddd, MMMM dd, yyyy")</span>
+                            </div>
+                            <div class="d-flex items-center gap-8">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <span class="text-sm text-secondary">@booking.Event.StartTime.ToString("HH:mm")</span>
+                            </div>
+                            <div class="d-flex items-center gap-8">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                <span class="text-sm text-secondary truncate">@booking.Event.Location</span>
+                            </div>
+                            <div class="d-flex items-center gap-8">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                <span class="text-sm text-secondary">Booked on @booking.BookingTime.ToString("MMM dd, yyyy 'at' HH:mm")</span>
+                            </div>
+                        </div>
+
+                        @if (booking.Status == PenangGoApp.DataAccess.BookingStatus.Pending || booking.Status == PenangGoApp.DataAccess.BookingStatus.Confirmed)
+                        {
+                            <button class="btn-glass btn-accent-heritage btn-sm" @onclick="@(() => CancelBooking(booking.Id))" @onclick:stopPropagation="true">Cancel</button>
+                        }
                     </div>
-                }
-            </div>
+                </PenangGoAppFresh.Components.Shared.GlassSurface>
+            }
         </div>
     }
 </div>
@@ -170,10 +154,10 @@
     {
         return status?.ToLower() switch
         {
-            "confirmed" => "status-confirmed",
-            "pending" => "status-pending",
-            "cancelled" => "status-cancelled",
-            _ => "status-default"
+            "confirmed" => "success",
+            "pending" => "gold",
+            "cancelled" => "error",
+            _ => "neutral"
         };
     }
 
@@ -181,7 +165,7 @@
     {
         try
         {
-            var success = await BookingService.UpdateBookingStatusAsync(bookingId, PenangGoApp.DataAccess.BookingStatus.Cancelled);
+            var success = await BookingService.CancelBookingAsync(bookingId) != null;
             if (success)
             {
                 NotificationService.RaiseNotification("Success", "Booking cancelled successfully!");
@@ -202,4 +186,4 @@
             NotificationService.RaiseNotification("Error", $"Failed to cancel booking: {ex.Message}");
         }
     }
-} 
+}

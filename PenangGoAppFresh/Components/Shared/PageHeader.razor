@@ -1,0 +1,29 @@
+<div class="page-header d-flex items-center gap-12 mb-24">
+    @if (ShowBack && !string.IsNullOrEmpty(BackHref))
+    {
+        <a href="@BackHref" class="page-header-back btn-glass btn-sm" aria-label="Go back">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+    }
+    <div class="flex-1">
+        <h1 class="page-header-title text-2xl font-semibold tracking-tight text-primary m-0">@Title</h1>
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <p class="page-header-subtitle text-sm text-secondary m-0 mt-4">@Subtitle</p>
+        }
+    </div>
+    @if (ActionContent != null)
+    {
+        <div class="page-header-actions d-flex gap-8">
+            @ActionContent
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public bool ShowBack { get; set; }
+    [Parameter] public string? BackHref { get; set; }
+    [Parameter] public RenderFragment? ActionContent { get; set; }
+}

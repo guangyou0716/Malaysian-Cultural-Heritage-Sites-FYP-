@@ -1,120 +1,57 @@
 @page "/panoramas"
-@inject PenangGoAppFresh.Services.PanoramaContentService PanoramaContentService
+@inject PenangGoAppFresh.Services.PanoramaContentService PanoramaService
+@inject PenangGoAppFresh.Services.HeritageSiteService HeritageSiteService
 @inject PenangGoAppFresh.Auth.AuthService AuthService
 
-<h2 class="mb-4 text-center heritage-title">Panorama Experiences</h2>
-@if (AuthService == null || !AuthService.IsLoggedIn)
-{
-    <div class="heritage-alert heritage-alert-warning text-center mt-4">Please log in to view panorama content.</div>
-}
-else if (panoramaContents == null)
-{
-    <div class="heritage-alert heritage-alert-info text-center mt-4">Loading panorama content...</div>
-}
-else if (panoramaContents.Count == 0)
-{
-    <div class="heritage-alert heritage-alert-info text-center mt-4">No panorama content available.</div>
-}
-else
-{
-    <div class="heritage-grid gap-lg mt-4">
-        @foreach (var pano in panoramaContents)
+<div style="max-width:900px;margin:0 auto;">
+    <PenangGoAppFresh.Components.Shared.PageHeader Title="360° Panorama Experiences" Subtitle="Immerse yourself in Penang's heritage" />
+
+    @if (!AuthService.IsLoggedIn)
+    {
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="Login required" Description="Please log in to view panorama content." Icon="🔐">
+            <button class="btn-glass btn-primary-heritage" @onclick="@(() => Navigation.NavigateTo("/login"))">Login</button>
+        </PenangGoAppFresh.Components.Shared.EmptyState>
+    }
+    else if (panoramas == null)
+    {
+        <div class="d-flex flex-col gap-16">
+            <PenangGoAppFresh.Components.Shared.Skeleton Variant="image" Style="height:300px;" />
+            <PenangGoAppFresh.Components.Shared.Skeleton Variant="title" />
+            <PenangGoAppFresh.Components.Shared.Skeleton Variant="text" />
+        </div>
+    }
+    else if (panoramas.Count == 0)
+    {
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="No panoramas yet" Description="360° panorama content will appear here." Icon="📷" />
+    }
+    else
+    {
+        @foreach (var pano in panoramas)
         {
-            <div class="heritage-card h-100 fade-in">
-                <div class="heritage-card-body">
-                    <h3 class="heritage-card-title">@pano.Title</h3>
-                    <div class="mb-2">@pano.Description</div>
-                    <div class="mb-2 text-secondary">Linked Site: @pano.HeritageSite?.Name</div>
-                    <button class="heritage-btn heritage-btn-success mt-2" @onclick="() => ViewPanorama(pano.PanoramaUrl)">View Panorama</button>
+            <div class="l1-material" style="margin-bottom:var(--space-24);overflow:hidden;">
+                <div style="padding:var(--space-16) var(--space-20);">
+                    <h3 class="text-lg font-semibold m-0 mb-4">@pano.Title</h3>
+                    @if (!string.IsNullOrEmpty(pano.Description))
+                    {
+                        <p class="text-sm text-secondary m-0 mb-12">@pano.Description</p>
+                    }
                 </div>
+                <PenangGoAppFresh.Components.Shared.PanoramaViewer ImageUrl="@pano.PanoramaUrl" Height="350" />
             </div>
         }
-    </div>
-}
-
-@if (AuthService != null && AuthService.IsAdmin)
-{
-    <div class="heritage-card mt-4 p-4">
-        <h4>Add New Panorama</h4>
-        <EditForm Model="newPanorama" OnValidSubmit="AddPanoramaAsync">
-            <div class="mb-2">
-                <label>Title</label>
-                <InputText class="form-control" @bind-Value="newPanorama.Title" />
-            </div>
-            <div class="mb-2">
-                <label>Description</label>
-                <InputText class="form-control" @bind-Value="newPanorama.Description" />
-            </div>
-            <div class="mb-2">
-                <label>Panorama URL (Google Maps Embed or 360 Image)</label>
-                <InputText class="form-control" @bind-Value="newPanorama.PanoramaUrl" />
-            </div>
-            <div class="mb-2">
-                <label>Linked Heritage Site ID</label>
-                <InputNumber class="form-control" @bind-Value="newPanorama.HeritageSiteId" />
-            </div>
-            <button class="heritage-btn heritage-btn-success mt-2" type="submit">Save Panorama</button>
-        </EditForm>
-    </div>
-}
-
-@if (!string.IsNullOrEmpty(selectedPanoramaUrl))
-{
-    <div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.7);">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Panorama View</h5>
-                    <button type="button" class="btn-close" @onclick="ClosePanorama"></button>
-                </div>
-                <div class="modal-body" style="height:70vh;">
-                    <iframe src="@selectedPanoramaUrl" width="100%" height="100%" style="border:0;" allowfullscreen loading="lazy"></iframe>
-                </div>
-            </div>
-        </div>
-    </div>
-}
+    }
+</div>
 
 @code {
-    private List<PenangGoApp.DataAccess.PanoramaContent> panoramaContents;
-    private string selectedPanoramaUrl;
-    private PenangGoApp.DataAccess.PanoramaContent newPanorama = new PenangGoApp.DataAccess.PanoramaContent();
+    [Inject] NavigationManager Navigation { get; set; }
+    private List<PenangGoApp.DataAccess.PanoramaContent>? panoramas;
 
     protected override async Task OnInitializedAsync()
     {
-        if (AuthService != null && AuthService.IsLoggedIn)
+        if (AuthService.IsLoggedIn)
         {
-            panoramaContents = await PanoramaContentService.GetAllAsync();
+            try { panoramas = await PanoramaService.GetAllAsync(); }
+            catch { panoramas = new(); }
         }
     }
-
-    private void ViewPanorama(string url)
-    {
-        selectedPanoramaUrl = url;
-    }
-    private void ClosePanorama()
-    {
-        selectedPanoramaUrl = null;
-    }
-
-    private async Task AddPanoramaAsync()
-    {
-        if (AuthService != null && AuthService.IsLoggedIn && newPanorama.UploadedBy.HasValue && newPanorama.HeritageSiteId.HasValue)
-        {
-        newPanorama.UploadedAt = DateTime.Now;
-            await PanoramaContentService.AddAsync(
-                newPanorama.Title,
-                newPanorama.Description,
-                newPanorama.PanoramaUrl,
-                newPanorama.UploadedBy.Value,
-                newPanorama.HeritageSiteId.Value);
-        newPanorama = new PenangGoApp.DataAccess.PanoramaContent();
-        panoramaContents = await PanoramaContentService.GetAllAsync();
-        StateHasChanged();
-        }
-        else
-        {
-            // Optionally show an error message to the user
-        }
-    }
-} 
+}

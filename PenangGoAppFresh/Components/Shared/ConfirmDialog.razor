@@ -1,0 +1,34 @@
+@if (IsVisible)
+{
+    <div class="dialog-overlay" @onclick="CancelAsync">
+        <div class="dialog-panel" @onclick:stopPropagation="true" role="alertdialog" aria-modal="true" aria-labelledby="dialog-title">
+            <h3 id="dialog-title" class="dialog-title">@Title</h3>
+            <p class="dialog-message">@Message</p>
+            <div class="dialog-actions">
+                <button class="btn-glass btn-sm" @onclick="CancelAsync">@CancelText</button>
+                <button class="btn-glass btn-sm @(IsDestructive ? "btn-accent-heritage" : "btn-primary-heritage")" @onclick="ConfirmAsync">@ConfirmText</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string Title { get; set; } = "Confirm";
+    [Parameter] public string Message { get; set; } = "";
+    [Parameter] public string ConfirmText { get; set; } = "Confirm";
+    [Parameter] public string CancelText { get; set; } = "Cancel";
+    [Parameter] public bool IsDestructive { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private async Task ConfirmAsync()
+    {
+        await OnConfirm.InvokeAsync();
+    }
+
+    private async Task CancelAsync()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}

@@ -9,15 +9,18 @@ namespace PenangGoApp.DataAccess
     {
         [Key]
         public int Id { get; set; }
-        
+
         public int UserId { get; set; }
-        
+
         public int EventId { get; set; }
-        
+
+        [StringLength(64)]
+        public string? IdempotencyKey { get; set; }
+
         public DateTime BookingTime { get; set; } = DateTime.UtcNow;
-        
+
         public BookingStatus Status { get; set; } = BookingStatus.Confirmed;
-        
+
         // Navigation properties
         public virtual User User { get; set; } = null!;
         public virtual Event Event { get; set; } = null!;

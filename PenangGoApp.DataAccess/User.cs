@@ -38,29 +38,39 @@ namespace PenangGoApp.DataAccess
         [StringLength(500)]
         public string? Bio { get; set; }
 
+        public string? AccessibilityPreference { get; set; }
+
         public bool EmailNotificationsEnabled { get; set; } = true;
 
         public bool PushNotificationsEnabled { get; set; } = true;
 
-        public string? SessionToken { get; set; } // Current session token
-        
-        public DateTime? SessionExpiresAt { get; set; } // Session expiration
-        
+        public string? SessionToken { get; set; }
+
+        public DateTime? SessionExpiresAt { get; set; }
+
+        public string? RefreshTokenHash { get; set; }
+
+        public DateTime? RefreshTokenExpiresAt { get; set; }
+
+        public string? PasswordResetTokenHash { get; set; }
+
+        public DateTime? PasswordResetTokenExpiresAt { get; set; }
+
         public int LoginAttempts { get; set; } = 0; // Failed login attempts
-        
+
         public DateTime? LockedUntil { get; set; } // Account lockout until
 
         // Compatibility properties for AuthService
-        public bool EmailNotifications 
-        { 
-            get => EmailNotificationsEnabled; 
-            set => EmailNotificationsEnabled = value; 
+        public bool EmailNotifications
+        {
+            get => EmailNotificationsEnabled;
+            set => EmailNotificationsEnabled = value;
         }
 
-        public bool PushNotifications 
-        { 
-            get => PushNotificationsEnabled; 
-            set => PushNotificationsEnabled = value; 
+        public bool PushNotifications
+        {
+            get => PushNotificationsEnabled;
+            set => PushNotificationsEnabled = value;
         }
 
         // Navigation properties for related entities
@@ -75,7 +85,7 @@ namespace PenangGoApp.DataAccess
         }
 
         public bool IsAccountLocked() => LockedUntil.HasValue && LockedUntil.Value > DateTime.UtcNow;
-        
+
         public void IncrementLoginAttempts()
         {
             LoginAttempts++;
@@ -85,4 +95,4 @@ namespace PenangGoApp.DataAccess
             }
         }
     }
-} 
+}

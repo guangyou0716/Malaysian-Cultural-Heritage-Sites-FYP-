@@ -1,0 +1,30 @@
+<a href="/site/@Site.Id" class="card-l1 d-flex flex-col" style="text-decoration:none;color:inherit;">
+    <img class="card-image" src="@(string.IsNullOrEmpty(Site.ImageUrl) ? "/images/penanggo_logo.png" : Site.ImageUrl)"
+         alt="@Site.Name" loading="lazy"
+         onerror="this.src='/images/penanggo_logo.png'" />
+    <div class="card-body flex-1">
+        <h3 class="card-title truncate">@Site.Name</h3>
+        <p class="card-subtitle truncate">@Site.Category</p>
+        @if (Site.AverageRating > 0)
+        {
+            <div class="d-flex items-center gap-4 mt-8">
+                <span class="text-xs text-gold font-medium">★ @Site.AverageRating.ToString("0.0")</span>
+                <span class="text-xs text-tertiary">(@Site.TotalReviews reviews)</span>
+            </div>
+        }
+        <div class="d-flex gap-4 mt-8 flex-wrap">
+            @if (Site.HasPanoramaContent)
+            {
+                <span class="badge badge-teal">360°</span>
+            }
+            @if (!string.IsNullOrEmpty(Site.HistoricalPeriod))
+            {
+                <span class="badge badge-neutral">@Site.HistoricalPeriod</span>
+            }
+        </div>
+    </div>
+</a>
+
+@code {
+    [Parameter] public PenangGoApp.DataAccess.HeritageSite Site { get; set; } = default!;
+}

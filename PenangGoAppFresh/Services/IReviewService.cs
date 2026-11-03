@@ -14,5 +14,7 @@ namespace PenangGoAppFresh.Services
         Task AddReviewAsync(int userId, int siteId, int rating, string comment);
         Task UpdateReviewAsync(int reviewId, int userId, int rating, string comment);
         Task DeleteReviewAsync(int reviewId, int userId);
+        Task<bool> ApproveReviewAsync(int reviewId);
+        Task<bool> RejectReviewAsync(int reviewId, string reason);
     }
-} 
+}

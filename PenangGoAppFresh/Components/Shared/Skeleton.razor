@@ -1,0 +1,18 @@
+@{
+    var css = $"skeleton {VariantClass} {Class}".Trim();
+}
+<div class="@css" style="@Style"></div>
+
+@code {
+    [Parameter] public string Variant { get; set; } = "text";
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private string VariantClass => Variant switch
+    {
+        "title" => "skeleton-title",
+        "image" => "skeleton-image",
+        "avatar" => "skeleton-avatar",
+        _ => "skeleton-text"
+    };
+}

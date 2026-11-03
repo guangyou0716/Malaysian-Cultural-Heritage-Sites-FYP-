@@ -1,0 +1,52 @@
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="mobile-bottom-dock l2-glass-dense hide-desktop" style="position:fixed;bottom:calc(var(--space-12) + var(--safe-bottom));left:50%;transform:translateX(-50%);padding:var(--space-6) var(--space-10);z-index:var(--z-nav);display:flex;gap:var(--space-4);border-radius:var(--radius-pill);">
+    @foreach (var item in DockItems)
+    {
+        var isActive = Navigation.Uri.EndsWith(item.Href, StringComparison.OrdinalIgnoreCase);
+        <button class="dock-item @(isActive ? "dock-active" : "")"
+                @onclick="@(() => Navigation.NavigateTo(item.Href))"
+                aria-label="@item.Label">
+            <span class="dock-icon">@item.Icon</span>
+            <span class="dock-label text-xs">@item.Label</span>
+        </button>
+    }
+</div>
+
+<style>
+    .dock-item {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 2px; padding: var(--space-6) var(--space-12);
+        border: none; background: transparent; border-radius: var(--radius-lg);
+        cursor: pointer; color: var(--text-secondary); min-width: 56px;
+        transition: all var(--duration-fast) var(--ease-default);
+    }
+    .dock-item:hover { color: var(--text-primary); }
+    .dock-active {
+        color: var(--heritage-teal);
+        background: rgba(26, 122, 109, 0.1);
+    }
+    .dock-icon { font-size: 20px; line-height: 1; }
+    .dock-label { font-size: 10px; font-weight: 500; letter-spacing: 0.02em; }
+</style>
+
+@code {
+    private record DockItem(string Href, string Icon, string Label);
+
+    private List<DockItem> DockItems => AuthService.IsLoggedIn
+        ? new()
+        {
+            new("/", "⌂", "Home"),
+            new("/map", "◎", "Map"),
+            new("/events", "▦", "Events"),
+            new("/dashboard", "◫", "Me"),
+        }
+        : new()
+        {
+            new("/", "⌂", "Home"),
+            new("/map", "◎", "Map"),
+            new("/events", "▦", "Events"),
+            new("/login", "→", "Login"),
+        };
+}

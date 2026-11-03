@@ -4,162 +4,135 @@
 @inject PenangGoAppFresh.Services.NotificationService NotificationService
 @inject NavigationManager Navigation
 
-<div class="admin-users-container fade-in">
-    <!-- Header Section -->
-    <div class="admin-header">
-        <div class="header-content">
-            <h1 class="page-title">
-                <span class="title-icon">👥</span>
-                User Management
-            </h1>
-            <p class="page-subtitle">Manage user accounts, roles, and permissions</p>
-        </div>
-    </div>
+<div>
+    <PenangGoAppFresh.Components.Shared.PageHeader Title="User Management" Subtitle="Manage user accounts, roles, and permissions">
+        <PenangGoAppFresh.Components.Shared.StatusBadge Text="Admin" Variant="gold" />
+    </PenangGoAppFresh.Components.Shared.PageHeader>
 
     @if (!AuthService.IsLoggedIn)
     {
-        <div class="auth-required-section">
-            <div class="auth-card">
-                <div class="auth-icon">🔐</div>
-                <h3>Authentication Required</h3>
-                <p>Please log in to access admin features</p>
-                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/login"))">
-                    <span class="btn-icon">🔑</span>
-                    Login Now
-                </button>
-            </div>
-        </div>
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="Authentication Required" Description="Please log in to access admin features.">
+            <button class="btn-glass btn-primary-heritage" @onclick="@(() => Navigation.NavigateTo("/login"))">Login Now</button>
+        </PenangGoAppFresh.Components.Shared.EmptyState>
     }
     else if (!AuthService.IsAdmin)
     {
-        <div class="access-denied-section">
-            <div class="access-denied-card">
-                <div class="access-denied-icon">🚫</div>
-                <h3>Access Denied</h3>
-                <p>You do not have admin privileges to access this page</p>
-                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">
-                    <span class="btn-icon">🏠</span>
-                    Go to Dashboard
-                </button>
-            </div>
-        </div>
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="Access Denied" Description="You do not have admin privileges to access this page.">
+            <button class="btn-glass btn-primary-heritage" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">Go to Dashboard</button>
+        </PenangGoAppFresh.Components.Shared.EmptyState>
     }
     else if (users == null)
     {
-        <div class="loading-section">
-            <div class="loading-spinner">
-                <div class="spinner"></div>
-            </div>
-            <p>Loading users...</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-16);">
+            @for (int i = 0; i < 6; i++) { <PenangGoAppFresh.Components.Shared.Skeleton Variant="image" Style="height:120px;" /> }
         </div>
     }
     else if (users.Count == 0)
     {
-        <div class="empty-state-section">
-            <div class="empty-state-card">
-                <div class="empty-icon">👥</div>
-                <h3>No Users Found</h3>
-                <p>There are no users registered in the system yet.</p>
-            </div>
-        </div>
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="No Users Found" Description="There are no users registered in the system yet." />
     }
     else
     {
-        <div class="users-content">
-            <!-- Statistics Section -->
-            <div class="users-stats">
-                <div class="stat-card">
-                    <div class="stat-icon">👥</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@users.Count</span>
-                        <span class="stat-label">Total Users</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">👑</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@users.Count(u => u.IsAdmin)</span>
-                        <span class="stat-label">Admins</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@users.Count(u => u.IsActive)</span>
-                        <span class="stat-label">Active Users</span>
-                    </div>
-                </div>
+        <!-- Statistics -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:var(--space-16);margin-bottom:var(--space-24);">
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@users.Count</div>
+                <div class="text-sm text-secondary mt-4">Total Users</div>
             </div>
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@users.Count(u => u.IsAdmin)</div>
+                <div class="text-sm text-secondary mt-4">Admins</div>
+            </div>
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@users.Count(u => u.IsActive)</div>
+                <div class="text-sm text-secondary mt-4">Active Users</div>
+            </div>
+        </div>
 
-            <!-- Users Grid -->
-            <div class="users-grid">
-                @foreach (var user in users)
-                {
-                    <div class="user-card fade-in">
-                        <div class="user-header">
-                            <div class="user-avatar">
-                                <span class="avatar-icon">@(user.IsAdmin ? "👑" : "👤")</span>
-                            </div>
-                            <div class="user-status-badges">
+        <!-- Users Table -->
+        <div class="l1-material" style="overflow:hidden;">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="border-bottom:1px solid var(--border-subtle, rgba(255,255,255,0.08));">
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:left;">User</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:left;">Email</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:center;">Role</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:center;">Status</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:center;">Joined</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in pagedItems)
+                    {
+                        <tr style="border-bottom:1px solid var(--border-subtle, rgba(255,255,255,0.06));">
+                            <td style="padding:var(--space-12) var(--space-16);">
+                                <div class="d-flex items-center gap-8">
+                                    <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:var(--text-sm);font-weight:600;"
+                                         class="@(user.IsAdmin ? "badge-gold" : "badge-neutral")">
+                                        @user.Name[0].ToString().ToUpper()
+                                    </div>
+                                    <div>
+                                        <div class="text-md font-medium text-primary">@user.Name</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);">
+                                <span class="text-sm text-secondary">@user.Email</span>
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);text-align:center;">
                                 @if (user.IsAdmin)
                                 {
-                                    <span class="status-badge status-admin">Admin</span>
-                                }
-                                @if (user.IsActive)
-                                {
-                                    <span class="status-badge status-active">Active</span>
+                                    <PenangGoAppFresh.Components.Shared.StatusBadge Text="Admin" Variant="gold" />
                                 }
                                 else
                                 {
-                                    <span class="status-badge status-inactive">Inactive</span>
+                                    <PenangGoAppFresh.Components.Shared.StatusBadge Text="User" Variant="neutral" />
                                 }
-                            </div>
-                        </div>
-                        
-                        <div class="user-body">
-                            <h3 class="user-name">@user.Name</h3>
-                            <div class="user-email">@user.Email</div>
-                            
-                            <div class="user-details">
-                                <div class="detail-item">
-                                    <span class="detail-icon">📧</span>
-                                    <span class="detail-text">@user.Email</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-icon">👤</span>
-                                    <span class="detail-text">@(user.IsAdmin ? "Administrator" : "Regular User")</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-icon">📅</span>
-                                    <span class="detail-text">Joined: @(user.CreatedAt.ToString("MMM dd, yyyy"))</span>
-                                </div>
-                            </div>
-                            
-                            <div class="user-actions">
-                                <button class="btn btn-sm btn-primary" @onclick="@(() => EditUser(user))" @onclick:stopPropagation="true">
-                                    <span class="btn-icon">✏️</span>
-                                    Edit
-                                </button>
-                                <button class="btn btn-sm btn-outline" @onclick="@(() => ToggleRole(user))" @onclick:stopPropagation="true">
-                                    <span class="btn-icon">@(user.IsAdmin ? "⬇️" : "⬆️")</span>
-                                    @(user.IsAdmin ? "Demote" : "Promote")
-                                </button>
-                                <button class="btn btn-sm @(user.IsActive ? "btn-warning" : "btn-success")" @onclick="@(() => ToggleActive(user))" @onclick:stopPropagation="true">
-                                    <span class="btn-icon">@(user.IsActive ? "⏸️" : "▶️")</span>
-                                    @(user.IsActive ? "Deactivate" : "Activate")
-                                </button>
-                                @if (user.Id != AuthService.CurrentUser?.Id)
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);text-align:center;">
+                                @if (user.IsActive)
                                 {
-                                    <button class="btn btn-sm btn-danger" @onclick="@(() => DeleteUser(user))" @onclick:stopPropagation="true">
-                                        <span class="btn-icon">🗑️</span>
-                                        Delete
-                                    </button>
+                                    <PenangGoAppFresh.Components.Shared.StatusBadge Text="Active" Variant="teal" />
                                 }
-                            </div>
-                        </div>
+                                else
+                                {
+                                    <PenangGoAppFresh.Components.Shared.StatusBadge Text="Inactive" Variant="terracotta" />
+                                }
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);text-align:center;">
+                                <span class="text-sm text-secondary">@user.CreatedAt.ToString("MMM dd, yyyy")</span>
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);text-align:right;">
+                                <div class="d-flex gap-8" style="justify-content:flex-end;">
+                                    <button class="btn-glass btn-sm" @onclick="@(() => EditUser(user))" @onclick:stopPropagation="true">Edit</button>
+                                    <button class="btn-glass btn-sm btn-primary-heritage" @onclick="@(() => ToggleRole(user))" @onclick:stopPropagation="true">
+                                        @(user.IsAdmin ? "Demote" : "Promote")
+                                    </button>
+                                    <button class="btn-glass btn-sm @(user.IsActive ? "btn-accent-heritage" : "btn-primary-heritage")" @onclick="@(() => ToggleActive(user))" @onclick:stopPropagation="true">
+                                        @(user.IsActive ? "Deactivate" : "Activate")
+                                    </button>
+                                    @if (user.Id != AuthService.CurrentUser?.Id)
+                                    {
+                                        <button class="btn-glass btn-sm btn-accent-heritage" @onclick="@(() => DeleteUser(user))" @onclick:stopPropagation="true">Delete</button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (TotalPages > 1)
+            {
+                <div class="d-flex justify-between items-center p-16" style="border-top:1px solid var(--border-subtle);">
+                    <span class="text-xs text-secondary">Showing @((ClampedPage - 1) * PageSize + 1)–@Math.Min(ClampedPage * PageSize, users.Count) of @users.Count</span>
+                    <div class="d-flex gap-8 items-center">
+                        <button class="btn-glass btn-sm" @onclick="PrevPage" disabled="@(currentPage <= 1)">Previous</button>
+                        <span class="text-xs text-secondary">Page @ClampedPage of @TotalPages</span>
+                        <button class="btn-glass btn-sm" @onclick="NextPage" disabled="@(currentPage >= TotalPages)">Next</button>
                     </div>
-                }
-            </div>
+                </div>
+            }
         </div>
     }
 </div>
@@ -167,62 +140,53 @@
 <!-- Edit User Modal -->
 @if (showEditModal && selectedUser != null)
 {
-    <div class="modal-overlay" @onclick="CloseEditModal">
-        <div class="modal-content" @onclick:stopPropagation="true">
-            <div class="modal-header">
-                <h3>Edit User: @selectedUser.Name</h3>
-                <button class="modal-close" @onclick="CloseEditModal">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Name:</label>
-                    <input type="text" class="form-control" @bind="editUser.Name" />
+    <div class="dialog-overlay" @onclick="CloseEditModal">
+        <div class="dialog-panel" @onclick:stopPropagation="true" style="max-width:480px;width:100%;">
+            <h3 class="dialog-title">Edit User: @selectedUser.Name</h3>
+            <div style="display:grid;gap:var(--space-12);margin:var(--space-16) 0;">
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Name</label>
+                    <input type="text" class="input-glass w-full" @bind="editUser.Name" />
                 </div>
-                <div class="form-group">
-                    <label>Email:</label>
-                    <input type="email" class="form-control" @bind="editUser.Email" />
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Email</label>
+                    <input type="email" class="input-glass w-full" @bind="editUser.Email" />
                 </div>
-                <div class="form-group">
-                    <label>Phone Number:</label>
-                    <input type="text" class="form-control" @bind="editUser.PhoneNumber" />
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Phone Number</label>
+                    <input type="text" class="input-glass w-full" @bind="editUser.PhoneNumber" />
                 </div>
-                <div class="form-group">
-                    <label>Bio:</label>
-                    <textarea class="form-control" @bind="editUser.Bio" rows="3"></textarea>
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Bio</label>
+                    <textarea class="input-glass w-full" @bind="editUser.Bio" rows="3"></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Role:</label>
-                    <select class="form-control" @bind="editUser.IsAdmin">
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Role</label>
+                    <select class="input-glass w-full" @bind="editUser.IsAdmin">
                         <option value="@false">Regular User</option>
                         <option value="@true">Administrator</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Status:</label>
-                    <select class="form-control" @bind="editUser.IsActive">
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Status</label>
+                    <select class="input-glass w-full" @bind="editUser.IsActive">
                         <option value="@true">Active</option>
                         <option value="@false">Inactive</option>
                     </select>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" @onclick="CloseEditModal">Cancel</button>
-                <button class="btn btn-primary" @onclick="SaveUserChanges" disabled="@isSaving">
-                    @if (isSaving)
-                    {
-                        <span class="btn-icon">⏳</span>
-                        <span>Saving...</span>
-                    }
-                    else
-                    {
-                        <span class="btn-icon">💾</span>
-                        <span>Save Changes</span>
-                    }
+            <div class="dialog-actions">
+                <button class="btn-glass btn-sm" @onclick="CloseEditModal">Cancel</button>
+                <button class="btn-glass btn-sm btn-primary-heritage" @onclick="SaveUserChanges" disabled="@isSaving">
+                    @(isSaving ? "Saving..." : "Save Changes")
                 </button>
             </div>
         </div>
     </div>
 }
+
+<!-- Confirm Dialog -->
+<PenangGoAppFresh.Components.Shared.ConfirmDialog IsVisible="showConfirm" Title="@confirmTitle" Message="@confirmMessage" IsDestructive="@confirmDestructive" OnConfirm="RunConfirm" OnCancel="CancelConfirm" />
 
 @code {
     private List<PenangGoApp.DataAccess.User> users;
@@ -230,6 +194,41 @@
     private PenangGoApp.DataAccess.User? selectedUser;
     private PenangGoApp.DataAccess.User editUser = new();
     private bool isSaving = false;
+
+    // Pagination
+    private const int PageSize = 10;
+    private int currentPage = 1;
+    private int ClampedPage => Math.Min(currentPage, TotalPages);
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(users.Count() / (double)PageSize));
+    private IEnumerable<PenangGoApp.DataAccess.User> pagedItems =>
+        users.Skip((ClampedPage - 1) * PageSize).Take(PageSize);
+    private void NextPage() { if (currentPage < TotalPages) currentPage++; }
+    private void PrevPage() { if (currentPage > 1) currentPage--; }
+
+    // Shared confirm dialog
+    private bool showConfirm;
+    private string confirmTitle = "Confirm";
+    private string confirmMessage = "";
+    private bool confirmDestructive = true;
+    private Func<Task>? confirmAction;
+
+    private void OpenConfirm(string title, string message, Func<Task> action, bool destructive = true)
+    {
+        confirmTitle = title;
+        confirmMessage = message;
+        confirmAction = action;
+        confirmDestructive = destructive;
+        showConfirm = true;
+    }
+
+    private async Task RunConfirm()
+    {
+        showConfirm = false;
+        if (confirmAction != null)
+            await confirmAction();
+    }
+
+    private void CancelConfirm() => showConfirm = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -378,11 +377,19 @@
         }
     }
 
-    private async Task DeleteUser(PenangGoApp.DataAccess.User user)
+    private void DeleteUser(PenangGoApp.DataAccess.User user)
+    {
+        OpenConfirm("Delete User",
+            $"Delete the account of '{user.Name}' ({user.Email})?\nThis action cannot be undone.",
+            () => DeleteUserConfirmed(user));
+    }
+
+    private async Task DeleteUserConfirmed(PenangGoApp.DataAccess.User user)
     {
         // Optimistically remove from UI
         var originalUsers = users.ToList();
         users.Remove(user);
+        currentPage = 1;
         StateHasChanged();
 
         try
@@ -421,4 +428,4 @@
             NotificationService.RaiseNotification("Error", "Failed to refresh users: " + ex.Message);
         }
     }
-} 
+}

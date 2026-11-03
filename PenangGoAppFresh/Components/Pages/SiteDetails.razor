@@ -5,294 +5,298 @@
 @inject PenangGoAppFresh.Auth.AuthService AuthService
 @inject IJSRuntime JSRuntime
 
-<div class="site-details-container fade-in">
-@if (site == null)
-{
-        <div class="loading-state">
-            <div class="loading-spinner"></div>
-            <p>Loading site details...</p>
+<div class="l0-content">
+    @if (isLoading)
+    {
+        <div style="max-width:800px;margin:0 auto;padding:var(--space-16);">
+            <div class="d-flex flex-col gap-16">
+                <PenangGoAppFresh.Components.Shared.Skeleton Variant="image" Style="height:300px;" />
+                <PenangGoAppFresh.Components.Shared.Skeleton Variant="title" />
+                <PenangGoAppFresh.Components.Shared.Skeleton Variant="text" />
+                <PenangGoAppFresh.Components.Shared.Skeleton Variant="text" Style="width:60%;" />
+            </div>
         </div>
-}
-else
-{
-        <!-- Hero Section -->
-        <div class="site-hero">
-        @if (!string.IsNullOrEmpty(site.ImageUrl))
-        {
-                <div class="hero-image" style="background-image:url('@site.ImageUrl');">
-                    <div class="hero-overlay">
-                        <div class="hero-content">
-                            <h1 class="site-title">@site.Name</h1>
-                            <div class="site-location">
-                                <span class="location-icon">📍</span>
-                                @site.Location
-                            </div>
-                        </div>
-                    </div>
+    }
+    else if (site == null)
+    {
+        <div style="max-width:800px;margin:0 auto;padding:var(--space-16);">
+            <PenangGoAppFresh.Components.Shared.ErrorState Title="Site not found"
+                Message="We couldn't load this heritage site. It may have been removed or there may be a network problem."
+                OnRetry="ReloadAsync" />
+        </div>
+    }
+    else
+    {
+        <!-- Hero Image — edge to edge -->
+        <div style="position:relative;overflow:hidden;">
+            <img src="@(string.IsNullOrEmpty(site.ImageUrl) ? "/images/penanggo_logo.png" : site.ImageUrl)"
+                 alt="@site.Name" style="width:100%;height:340px;object-fit:cover;display:block;"
+                 onerror="this.src='/images/penanggo_logo.png'" />
+            <div class="l2-glass" style="position:absolute;bottom:var(--space-16);left:var(--space-16);right:var(--space-16);padding:var(--space-24);border-radius:var(--radius-xl);">
+                <h1 class="text-2xl font-bold tracking-tight m-0">@site.Name</h1>
+                <div class="d-flex items-center gap-8 mt-8">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span class="text-sm text-secondary">@site.Location</span>
                 </div>
-            }
-            else
-            {
-                <div class="hero-image-placeholder">
-                    <div class="hero-content">
-                        <h1 class="site-title">@site.Name</h1>
-                        <div class="site-location">
-                            <span class="location-icon">📍</span>
-                            @site.Location
-                        </div>
-                    </div>
+                <div class="d-flex gap-8 mt-12 flex-wrap">
+                    @if (!string.IsNullOrEmpty(site.Category))
+                    {
+                        <PenangGoAppFresh.Components.Shared.StatusBadge Text="@site.Category" Variant="teal" />
+                    }
+                    @if (site.AverageRating > 0)
+                    {
+                        <PenangGoAppFresh.Components.Shared.StatusBadge Text="@($"★ {site.AverageRating:0.0}")" Variant="gold" />
+                    }
+                    @if (site.HasPanoramaContent)
+                    {
+                        <PenangGoAppFresh.Components.Shared.StatusBadge Text="360°" Variant="teal" />
+                    }
                 </div>
-            }
+            </div>
         </div>
 
         <!-- Main Content -->
-        <div class="site-content">
-            <div class="content-grid">
-                <!-- Site Information -->
-                <div class="site-info-card">
-                    <div class="card-header">
-                        <div class="card-icon">🏛️</div>
-                        <h3 class="card-title">About This Site</h3>
-                    </div>
-                    <div class="card-body">
-                        <p class="site-description">@site.Description</p>
-                        <div class="site-details-grid">
-                            <div class="detail-row"><span class="detail-label">Visiting Hours:</span> <span class="detail-value">@site.VisitingHours</span></div>
-                            <div class="detail-row"><span class="detail-label">Entry Fee:</span> <span class="detail-value">@site.EntryFee</span></div>
-                            <div class="detail-row"><span class="detail-label">Contact Info:</span> <span class="detail-value">@site.ContactInfo</span></div>
-                            <div class="detail-row"><span class="detail-label">Website:</span> <span class="detail-value">@if (!string.IsNullOrWhiteSpace(site.Website)) { <button class="btn btn-link" @onclick="() => OpenInNewTab(site.Website)">@site.Website</button> } else { <span>-</span> }</span></div>
-                        </div>
-                        <div class="site-actions">
-                            <button class="btn btn-primary" disabled>
-                                <span class="btn-icon">🎫</span>
-                                Book Ticket (Coming Soon)
-                            </button>
-                            @if (panoramas != null && panoramas.Count > 0)
-                            {
-                                <button class="btn btn-secondary" @onclick="ShowPanorama">
-                                    <span class="btn-icon">📱</span>
-                                    View 360° Image
-                                </button>
-                            }
-                        </div>
-                    </div>
-                </div>
+        <div style="max-width:800px;margin:0 auto;padding:var(--space-24) var(--space-16);">
+            <!-- About Section -->
+            <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-24 mb-24">
+                <h2 class="text-lg font-semibold text-primary mb-16">About This Site</h2>
+                <p class="text-base text-secondary" style="line-height:var(--leading-relaxed);margin:0;">@site.Description</p>
+            </PenangGoAppFresh.Components.Shared.GlassSurface>
 
-                <!-- Quick Stats -->
-                <div class="stats-card">
-                    <div class="card-header">
-                        <div class="card-icon">📊</div>
-                        <h3 class="card-title">Site Statistics</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <div class="stat-icon">⭐</div>
-                                <div class="stat-content">
-                                    <h4>@(reviews?.Count ?? 0)</h4>
-                                    <p>Reviews</p>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon">📅</div>
-                                <div class="stat-content">
-                                    <h4>@(siteEvents?.Count ?? 0)</h4>
-                                    <p>Events</p>
-                                </div>
-                            </div>
+            <!-- Details Grid -->
+            <div class="d-grid gap-12 mb-24" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));">
+                @if (!string.IsNullOrEmpty(site.VisitingHours))
+                {
+                    <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16">
+                        <div class="d-flex items-center gap-8 mb-8">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span class="text-xs text-secondary font-medium">Visiting Hours</span>
                         </div>
+                        <div class="text-sm font-medium text-primary">@site.VisitingHours</div>
+                    </PenangGoAppFresh.Components.Shared.GlassSurface>
+                }
+                @if (!string.IsNullOrEmpty(site.EntryFee))
+                {
+                    <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16">
+                        <div class="d-flex items-center gap-8 mb-8">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            <span class="text-xs text-secondary font-medium">Entry Fee</span>
+                        </div>
+                        <div class="text-sm font-medium text-primary">@site.EntryFee</div>
+                    </PenangGoAppFresh.Components.Shared.GlassSurface>
+                }
+                @if (!string.IsNullOrEmpty(site.ContactInfo))
+                {
+                    <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16">
+                        <div class="d-flex items-center gap-8 mb-8">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            <span class="text-xs text-secondary font-medium">Contact</span>
+                        </div>
+                        <div class="text-sm font-medium text-primary">@site.ContactInfo</div>
+                    </PenangGoAppFresh.Components.Shared.GlassSurface>
+                }
+                @if (!string.IsNullOrEmpty(site.Website))
+                {
+                    <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16">
+                        <div class="d-flex items-center gap-8 mb-8">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            <span class="text-xs text-secondary font-medium">Website</span>
+                        </div>
+                        <button class="text-sm font-medium text-teal" style="background:none;border:none;cursor:pointer;padding:0;text-decoration:none;" @onclick="() => OpenInNewTab(site.Website)">@site.Website</button>
+                    </PenangGoAppFresh.Components.Shared.GlassSurface>
+                }
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-12 mb-24 flex-wrap">
+                @if (panoramas != null && panoramas.Count > 0)
+                {
+                    <button class="btn-glass btn-primary-heritage" @onclick="ShowPanorama">View 360° Image</button>
+                }
+                @if (AuthService != null && AuthService.IsLoggedIn)
+                {
+                    @if (!isBookmarked)
+                    {
+                        <button class="btn-glass" @onclick="AddBookmarkAsync">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                            Bookmark
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn-glass btn-accent-heritage" @onclick="RemoveBookmarkAsync">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                            Remove Bookmark
+                        </button>
+                    }
+                }
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="d-grid gap-12 mb-24" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));">
+                <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16 d-flex items-center gap-12">
+                    <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(184,146,63,0.1);display:flex;align-items:center;justify-content:center;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-gold)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                     </div>
-                </div>
+                    <div>
+                        <div class="text-xl font-bold text-primary">@(reviews?.Count ?? 0)</div>
+                        <div class="text-xs text-secondary">Reviews</div>
+                    </div>
+                </PenangGoAppFresh.Components.Shared.GlassSurface>
+                <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16 d-flex items-center gap-12">
+                    <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(26,122,109,0.1);display:flex;align-items:center;justify-content:center;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-teal)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </div>
+                    <div>
+                        <div class="text-xl font-bold text-primary">@(siteEvents?.Count ?? 0)</div>
+                        <div class="text-xs text-secondary">Events</div>
+                    </div>
+                </PenangGoAppFresh.Components.Shared.GlassSurface>
             </div>
 
             <!-- Reviews Section -->
             @if (reviews != null && reviews.Count > 0)
             {
-                <div class="reviews-section">
-                    <div class="section-header">
-                        <h3 class="section-title">
-                            <span class="title-icon">⭐</span>
-                            Site Reviews (@reviews.Count)
-                        </h3>
-                    </div>
-                    <div class="reviews-grid">
+                <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-24 mb-24">
+                    <h3 class="text-lg font-semibold text-primary mb-16">Reviews (@reviews.Count)</h3>
+                    <div class="d-flex flex-col gap-16">
                         @foreach (var review in reviews)
                         {
-                            <div class="review-card">
-                                <div class="review-header">
-                                    <div class="reviewer-info">
-                                        <div class="reviewer-avatar">@(review.User?.Name?.Substring(0, 1) ?? "U")</div>
-                                        <div class="reviewer-details">
-                                            <h4>@review.User?.Name</h4>
-                                            <div class="review-rating">
+                            <div class="p-16 rounded-lg" style="background:var(--canvas-surface);">
+                                <div class="d-flex justify-between items-start mb-12">
+                                    <div class="d-flex items-center gap-12">
+                                        <div style="width:36px;height:36px;border-radius:var(--radius-pill);background:var(--heritage-teal);color:var(--on-teal);display:flex;align-items:center;justify-content:center;font-size:var(--text-sm);font-weight:var(--weight-semibold);">
+                                            @(review.User?.Name?.Substring(0, 1) ?? "U")
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-primary">@review.User?.Name</div>
+                                            <div class="d-flex gap-2">
                                                 @for (int i = 1; i <= 5; i++)
                                                 {
-                                                    <span class="star @(i <= review.Rating ? "filled" : "")">★</span>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="@(i <= review.Rating ? "var(--heritage-gold)" : "none")" stroke="var(--heritage-gold)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                                                 }
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="review-date">@review.CreatedAt.ToString("MMM dd, yyyy")</div>
+                                    <span class="text-xs text-tertiary">@review.CreatedAt.ToString("MMM dd, yyyy")</span>
                                 </div>
-                                <div class="review-content">
-                                    <p>@review.Comment</p>
-                                </div>
+                                <p class="text-sm text-secondary m-0" style="line-height:var(--leading-relaxed);">@review.Comment</p>
                                 @if (AuthService != null && AuthService.IsLoggedIn && review.UserId == AuthService.CurrentUser?.Id)
                                 {
-                                    <div class="review-actions">
-                                        <button class="btn btn-sm btn-outline-warning" @onclick="() => StartEditReview(review)">
-                                            <span class="btn-icon">✏️</span> Edit
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteReviewAsync(review.Id)">
-                                            <span class="btn-icon">🗑️</span> Delete
-                                        </button>
+                                    <div class="d-flex gap-8 mt-12">
+                                        <button class="btn-glass btn-sm" @onclick="() => StartEditReview(review)">Edit</button>
+                                        <button class="btn-glass btn-sm btn-accent-heritage" @onclick="() => DeleteReviewAsync(review.Id)">Delete</button>
                                     </div>
                                 }
                             </div>
+
                             @if (editingReview != null && editingReview.Id == review.Id)
                             {
-                                <div class="edit-review-card">
-                                    <h4>Edit Review</h4>
+                                <PenangGoAppFresh.Components.Shared.GlassSurface Level="2" Tone="subtle" Class="p-16">
+                                    <h4 class="text-md font-semibold text-primary mb-16">Edit Review</h4>
                                     <EditForm Model="editReviewInput" OnValidSubmit="UpdateReviewAsync">
-                                        <div class="form-group">
-                                            <label>Rating</label>
-                                            <div class="rating-input">
+                                        <div class="mb-16">
+                                            <label class="text-sm font-medium text-secondary d-block mb-8">Rating</label>
+                                            <div class="d-flex gap-4">
                                                 @for (int i = 1; i <= 5; i++)
                                                 {
-                                                    <span class="star-input @(i <= editReviewInput.Rating ? "filled" : "")" 
-                                                          @onclick="() => editReviewInput.Rating = i">★</span>
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="@(i <= editReviewInput.Rating ? "var(--heritage-gold)" : "none")" stroke="var(--heritage-gold)" stroke-width="2" style="cursor:pointer;"
+                                                         @onclick="() => editReviewInput.Rating = i"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                                                 }
                                             </div>
                                         </div>
-                                        <div class="form-group">
-                                            <label>Comment</label>
-                                            <InputTextArea class="form-control" @bind-Value="editReviewInput.Comment" rows="3" />
+                                        <div class="mb-16">
+                                            <label class="text-sm font-medium text-secondary d-block mb-8">Comment</label>
+                                            <InputTextArea class="input-glass" @bind-Value="editReviewInput.Comment" rows="3" />
                                         </div>
-                                        <div class="form-actions">
-                                            <button class="btn btn-success" type="submit">
-                                                <span class="btn-icon">💾</span> Save
-                                            </button>
-                                            <button class="btn btn-secondary" type="button" @onclick="CancelEditReview">
-                                                <span class="btn-icon">❌</span> Cancel
-                                            </button>
+                                        <div class="d-flex gap-8">
+                                            <button class="btn-glass btn-primary-heritage btn-sm" type="submit">Save</button>
+                                            <button class="btn-glass btn-sm" type="button" @onclick="CancelEditReview">Cancel</button>
                                         </div>
                                     </EditForm>
-                                </div>
+                                </PenangGoAppFresh.Components.Shared.GlassSurface>
                             }
                         }
                     </div>
-                </div>
+                </PenangGoAppFresh.Components.Shared.GlassSurface>
             }
 
             <!-- Events Section -->
             @if (siteEvents != null && siteEvents.Count > 0)
             {
-                <div class="events-section">
-                    <div class="section-header">
-                        <h3 class="section-title">
-                            <span class="title-icon">🎉</span>
-                            Upcoming Events (@siteEvents.Count)
-                        </h3>
-                    </div>
-                    <div class="events-grid">
+                <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-24 mb-24">
+                    <h3 class="text-lg font-semibold text-primary mb-16">Upcoming Events (@siteEvents.Count)</h3>
+                    <div class="d-flex flex-col gap-12">
                         @foreach (var ev in siteEvents)
                         {
-                            <div class="event-card">
-                                <div class="event-header">
-                                    <div class="event-icon">🎉</div>
-                                    <div class="event-info">
-                                        <h4>@ev.Name</h4>
-                                        <div class="event-date">
-                                            <span class="date-icon">📅</span>
-                                            @ev.StartTime.ToString("MMM dd, yyyy HH:mm")
-                                        </div>
-                                    </div>
+                            <div class="d-flex items-center gap-12 p-12 rounded-md" style="background:var(--canvas-surface);">
+                                <div style="width:44px;height:44px;border-radius:var(--radius-md);background:rgba(26,122,109,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-teal)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                                 </div>
-                                <div class="event-description">
-                                    <p>@ev.Description</p>
+                                <div class="flex-1" style="min-width:0;">
+                                    <div class="text-sm font-medium text-primary truncate">@ev.Title</div>
+                                    <div class="text-xs text-secondary">@ev.StartTime.ToString("MMM dd, yyyy HH:mm")</div>
                                 </div>
                             </div>
                         }
                     </div>
-                </div>
+                </PenangGoAppFresh.Components.Shared.GlassSurface>
+            }
+
+            <!-- Pending review notice -->
+            @if (userPendingReview)
+            {
+                <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-24 mb-24">
+                    <p class="text-sm text-secondary m-0">Your review is awaiting approval and will appear here once it has been approved.</p>
+                </PenangGoAppFresh.Components.Shared.GlassSurface>
             }
 
             <!-- Add Review Section -->
             @if (AuthService != null && AuthService.IsLoggedIn && !hasUserReviewed)
             {
-                <div class="add-review-section">
-                    <div class="section-header">
-                        <h3 class="section-title">
-                            <span class="title-icon">✍️</span>
-                            Add Your Review
-                        </h3>
-                    </div>
-                    <div class="review-form-card">
-                        <EditForm Model="newReview" OnValidSubmit="AddReviewAsync">
-                            <div class="form-group">
-                                <label>Rating</label>
-                                <div class="rating-input">
-                                    @for (int i = 1; i <= 5; i++)
-                                    {
-                                        <span class="star-input @(i <= newReview.Rating ? "filled" : "")" 
-                                              @onclick="() => newReview.Rating = i">★</span>
-                                    }
-                                </div>
+                <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-24 mb-24">
+                    <h3 class="text-lg font-semibold text-primary mb-16">Add Your Review</h3>
+                    <EditForm Model="newReview" OnValidSubmit="AddReviewAsync">
+                        <div class="mb-16">
+                            <label class="text-sm font-medium text-secondary d-block mb-8">Rating</label>
+                            <div class="d-flex gap-4">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="@(i <= newReview.Rating ? "var(--heritage-gold)" : "none")" stroke="var(--heritage-gold)" stroke-width="2" style="cursor:pointer;"
+                                         @onclick="() => newReview.Rating = i"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                }
                             </div>
-                            <div class="form-group">
-                                <label>Comment</label>
-                                <InputTextArea class="form-control" @bind-Value="newReview.Comment" rows="4" placeholder="Share your experience at this heritage site..." />
-                            </div>
-                            <button class="btn btn-primary" type="submit">
-                                <span class="btn-icon">📝</span>
-                                Submit Review
-                            </button>
-                        </EditForm>
-                    </div>
-                </div>
+                        </div>
+                        <div class="mb-16">
+                            <label class="text-sm font-medium text-secondary d-block mb-8">Comment</label>
+                            <InputTextArea class="input-glass" @bind-Value="newReview.Comment" rows="4" placeholder="Share your experience at this heritage site..." />
+                        </div>
+                        <button class="btn-glass btn-primary-heritage" type="submit">Submit Review</button>
+                    </EditForm>
+                </PenangGoAppFresh.Components.Shared.GlassSurface>
             }
-
-            <!-- Bookmark Section -->
-            @if (AuthService != null && AuthService.IsLoggedIn)
-            {
-                <div class="bookmark-section">
-                    @if (!isBookmarked)
-                    {
-                        <button class="btn btn-outline-primary bookmark-btn" @onclick="AddBookmarkAsync">
-                            <span class="btn-icon">🔖</span>
-                            Bookmark this Site
-                        </button>
-                    }
-                    else
-                    {
-                        <button class="btn btn-outline-danger bookmark-btn" @onclick="RemoveBookmarkAsync">
-                            <span class="btn-icon">🗑️</span>
-                            Remove Bookmark
-                        </button>
-                    }
-                </div>
-            }
-    </div>
-}
+        </div>
+    }
 
     <!-- Panorama Modal -->
-@if (showPanorama && panoramas != null && panoramas.Count > 0)
-{
-    <div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,0.7);">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">360 Panorama</h5>
-                    <button type="button" class="btn-close" @onclick="HidePanorama"></button>
+    @if (showPanorama && panoramas != null && panoramas.Count > 0)
+    {
+        <div class="dialog-overlay" @onclick="HidePanorama">
+            <div class="dialog-panel" @onclick:stopPropagation="true" style="max-width:90vw;width:90vw;height:80vh;padding:0;overflow:hidden;">
+                <div class="d-flex justify-between items-center p-16" style="border-bottom:1px solid var(--border-subtle);">
+                    <h5 class="text-md font-semibold m-0">360° Panorama</h5>
+                    <button class="btn-glass btn-sm" @onclick="HidePanorama">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
                 </div>
-                <div class="modal-body" style="height:70vh;">
-                    <iframe src="@panoramas[0].PanoramaUrl" width="100%" height="100%" style="border:0;" allowfullscreen loading="lazy"></iframe>
+                <div style="height:calc(100% - 57px);">
+                    <PenangGoAppFresh.Components.Shared.PanoramaViewer ImageUrl="@panoramas[0].PanoramaUrl" Height="460" AutoRotate="true" />
                 </div>
             </div>
         </div>
-    </div>
-        }
-    </div>
+    }
+</div>
+
 @code {
     [Parameter]
     public int id { get; set; }
@@ -303,28 +307,57 @@ else
     private bool showPanorama = false;
     private ReviewInput newReview = new ReviewInput();
     private bool hasUserReviewed = false;
+    private bool userPendingReview = false;
     private bool isBookmarked = false;
 
     public class ReviewInput { public int Rating { get; set; } = 5; public string Comment { get; set; } }
     [Inject] PenangGoAppFresh.Services.ReviewService ReviewService { get; set; }
     [Inject] PenangGoAppFresh.Services.EventService EventService { get; set; }
-    [Inject] PenangGoAppFresh.Services.IApiBookmarkService BookmarkService { get; set; }
+    [Inject] PenangGoAppFresh.Services.BookmarkService BookmarkService { get; set; }
 
     private ReviewInput editReviewInput = new ReviewInput();
     private PenangGoApp.DataAccess.Review editingReview = null;
+    private bool isLoading = true;
+
     protected override async Task OnInitializedAsync()
     {
-        site = await HeritageSiteService.GetByIdAsync(id);
-        panoramas = await PanoramaContentService.GetByHeritageSiteIdAsync(id);
-        reviews = await ReviewService.GetSiteReviewsAsync(id);
-        var allEvents = await EventService.GetAllAsync();
-        siteEvents = allEvents;
-        if (AuthService != null && AuthService.IsLoggedIn && reviews != null)
+        await LoadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
         {
-            hasUserReviewed = reviews.Any(r => r.UserId == AuthService.CurrentUser?.Id);
+            site = await HeritageSiteService.GetByIdAsync(id);
+            panoramas = await PanoramaContentService.GetByHeritageSiteIdAsync(id);
+            reviews = await ReviewService.GetSiteReviewsAsync(id);
+            var allEvents = await EventService.GetAllAsync();
+            siteEvents = allEvents
+                .Where(e => e.Location != null &&
+                            e.Location.Contains(site?.Name ?? "", StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
+        catch
+        {
+            site = null;
+        }
+        isLoading = false;
+        StateHasChanged();
+
         if (AuthService != null && AuthService.IsLoggedIn)
         {
+            var userReviews = await ReviewService.GetUserReviewsAsync(AuthService.CurrentUser.Id);
+            var siteUserReviews = userReviews.Where(r => r.SiteId == id).ToList();
+            hasUserReviewed = siteUserReviews.Count > 0;
+            userPendingReview = siteUserReviews.Any(r => r.ApprovalStatus == PenangGoApp.DataAccess.ApprovalStatus.Pending);
+
             var userBookmarks = await BookmarkService.GetUserBookmarksAsync(AuthService.CurrentUser.Id);
             isBookmarked = userBookmarks.Any(b => b.SiteId == id);
         }
@@ -390,4 +423,4 @@ else
     {
         await JSRuntime.InvokeVoidAsync("window.open", url, "_blank");
     }
-} 
+}

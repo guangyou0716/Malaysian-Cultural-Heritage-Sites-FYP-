@@ -12,10 +12,11 @@ namespace PenangGoAppFresh.Auth
         Task<AuthResult> SignupAsync(string name, string email, string password, string? phoneNumber = null);
         Task<bool> LogoutAsync();
         Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
-        Task<bool> UpdateProfileAsync(int userId, string name, string? phoneNumber, string? bio);
+        Task<bool> UpdateProfileAsync(int userId, string name, string? phoneNumber, string? bio, string? accessibilityPreference);
         Task<bool> UpdateNotificationSettingsAsync(int userId, bool emailNotifications, bool pushNotifications);
         Task<bool> UpdateDeviceTokenAsync(int userId, string deviceToken);
         Task<User?> GetCurrentUserAsync();
+        Task<bool> RestoreSessionAsync();
         Task<bool> IsAdminAsync(int userId);
         Task<bool> IsLoggedInAsync();
         Task<bool> HasPermissionAsync(int userId, string permission);
@@ -24,7 +25,7 @@ namespace PenangGoAppFresh.Auth
         Task<bool> ActivateUserAsync(int userId);
         Task<bool> PromoteToAdminAsync(int userId);
         Task<bool> DemoteFromAdminAsync(int userId);
-        
+
         // Properties for Blazor pages
         User? CurrentUser { get; }
         bool IsLoggedIn { get; }
@@ -43,12 +44,14 @@ namespace PenangGoAppFresh.Auth
     public class AuthService : IAuthService
     {
         private readonly IApiService _apiService;
+        private readonly ITokenStore _tokenStore;
         private readonly ILogger<AuthService> _logger;
         private User? _currentUser;
 
-        public AuthService(IApiService apiService, ILogger<AuthService> logger)
+        public AuthService(IApiService apiService, ITokenStore tokenStore, ILogger<AuthService> logger)
         {
             _apiService = apiService;
+            _tokenStore = tokenStore;
             _logger = logger;
         }
 
@@ -63,39 +66,42 @@ namespace PenangGoAppFresh.Auth
             try
             {
                 var response = await _apiService.LoginAsync(email, password);
-                
+
                 if (response?.Success == true && response.User != null)
                 {
+                    // Persist tokens so authenticated requests work and the session survives restarts
+                    await _tokenStore.SaveTokensAsync(response.AccessToken, response.RefreshToken, response.SessionToken);
+
                     // Fetch full user profile after login
-                    var fullUser = await _apiService.GetUserByIdAsync(response.User.Id);
+                    var fullUser = await _apiService.GetProfileAsync();
                     _currentUser = fullUser ?? response.User;
                     _logger.LogInformation("User {Email} logged in successfully", email);
                     AuthStateChanged?.Invoke();
 
-                    return new AuthResult 
-                    { 
-                        Success = true, 
-                        Message = "Login successful.", 
+                    return new AuthResult
+                    {
+                        Success = true,
+                        Message = "Login successful.",
                         User = _currentUser,
                         Token = response.SessionToken
                     };
                 }
                 else
                 {
-                    return new AuthResult 
-                    { 
-                        Success = false, 
-                        Message = response?.Message ?? "Login failed." 
+                    return new AuthResult
+                    {
+                        Success = false,
+                        Message = response?.Message ?? "Login failed."
                     };
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during login for email: {Email}", email);
-                return new AuthResult 
-                { 
-                    Success = false, 
-                    Message = "An error occurred during login. Please try again." 
+                return new AuthResult
+                {
+                    Success = false,
+                    Message = "An error occurred during login. Please try again."
                 };
             }
         }
@@ -105,7 +111,7 @@ namespace PenangGoAppFresh.Auth
             try
             {
                 var response = await _apiService.SignupAsync(name, email, password);
-                
+
                 if (response?.Success == true && response.User != null)
                 {
                     // Fetch full user profile after signup
@@ -114,47 +120,77 @@ namespace PenangGoAppFresh.Auth
                     _logger.LogInformation("New user registered: {Email}", email);
                     AuthStateChanged?.Invoke();
 
-                    return new AuthResult 
-                    { 
-                        Success = true, 
-                        Message = "Registration successful.", 
+                    return new AuthResult
+                    {
+                        Success = true,
+                        Message = "Registration successful.",
                         User = _currentUser,
                         Token = response.SessionToken
                     };
                 }
                 else
                 {
-                    return new AuthResult 
-                    { 
-                        Success = false, 
-                        Message = response?.Message ?? "Registration failed." 
+                    return new AuthResult
+                    {
+                        Success = false,
+                        Message = response?.Message ?? "Registration failed."
                     };
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during signup for email: {Email}", email);
-                return new AuthResult 
-                { 
-                    Success = false, 
-                    Message = "An error occurred during registration. Please try again." 
+                return new AuthResult
+                {
+                    Success = false,
+                    Message = "An error occurred during registration. Please try again."
                 };
             }
         }
 
-        public Task<bool> LogoutAsync()
+        public async Task<bool> LogoutAsync()
         {
             try
             {
+                // Revoke the session server-side, then clear local credentials
+                await _apiService.LogoutAsync(_tokenStore.SessionToken, await _tokenStore.GetRefreshTokenAsync());
+                await _tokenStore.ClearAsync();
                 _currentUser = null;
                 _logger.LogInformation("User logged out successfully");
                 AuthStateChanged?.Invoke();
-                return Task.FromResult(true);
+                return true;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during logout");
-                return Task.FromResult(false);
+                return false;
+            }
+        }
+
+        public async Task<bool> RestoreSessionAsync()
+        {
+            if (_currentUser != null) return true;
+
+            var refreshToken = await _tokenStore.GetRefreshTokenAsync();
+            if (string.IsNullOrWhiteSpace(refreshToken))
+                return false;
+
+            try
+            {
+                var user = await _apiService.GetProfileAsync();
+                if (user == null)
+                    return false;
+
+                _currentUser = user;
+                _logger.LogInformation("Session restored for user: {Email}", user.Email);
+                AuthStateChanged?.Invoke();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error restoring session");
+                await _tokenStore.ClearAsync();
+                return false;
             }
         }
 
@@ -162,30 +198,11 @@ namespace PenangGoAppFresh.Auth
         {
             try
             {
-                var user = await _apiService.GetUserByIdAsync(userId);
-                if (user == null) return false;
-
-                if (!VerifyPassword(currentPassword, user.PasswordHash, user.PasswordSalt))
-                {
-                    return false;
-                }
-
-                if (!IsPasswordStrong(newPassword))
-                {
-                    return false;
-                }
-
-                CreatePasswordHash(newPassword, out string passwordHash, out string passwordSalt);
-                user.PasswordHash = passwordHash;
-                user.PasswordSalt = passwordSalt;
-
-                var updatedUser = await _apiService.UpdateUserAsync(user);
-                if (updatedUser != null)
-                {
+                // Server-side verification (the client never has the password hash)
+                var ok = await _apiService.ChangePasswordAsync(currentPassword, newPassword);
+                if (ok)
                     _logger.LogInformation("Password changed for user: {UserId}", userId);
-                    return true;
-                }
-                return false;
+                return ok;
             }
             catch (Exception ex)
             {
@@ -194,7 +211,7 @@ namespace PenangGoAppFresh.Auth
             }
         }
 
-        public async Task<bool> UpdateProfileAsync(int userId, string name, string? phoneNumber, string? bio)
+        public async Task<bool> UpdateProfileAsync(int userId, string name, string? phoneNumber, string? bio, string? accessibilityPreference)
         {
             try
             {
@@ -204,10 +221,18 @@ namespace PenangGoAppFresh.Auth
                 user.Name = name;
                 user.PhoneNumber = phoneNumber;
                 user.Bio = bio;
+                user.AccessibilityPreference = accessibilityPreference;
 
                 var updatedUser = await _apiService.UpdateUserAsync(user);
                 if (updatedUser != null)
                 {
+                    if (_currentUser != null)
+                    {
+                        _currentUser.Name = name;
+                        _currentUser.PhoneNumber = phoneNumber;
+                        _currentUser.Bio = bio;
+                        _currentUser.AccessibilityPreference = accessibilityPreference;
+                    }
                     _logger.LogInformation("Profile updated for user: {UserId}", userId);
                     return true;
                 }
@@ -421,22 +446,5 @@ namespace PenangGoAppFresh.Auth
                 return false;
             }
         }
-
-        private void CreatePasswordHash(string password, out string passwordHash, out string passwordSalt)
-        {
-            var (hash, salt) = PenangGoApp.DataAccess.PasswordUtility.CreatePasswordHash(password);
-            passwordHash = hash;
-            passwordSalt = salt;
-        }
-
-        private bool VerifyPassword(string password, string storedHash, string storedSalt)
-        {
-            return PenangGoApp.DataAccess.PasswordUtility.VerifyPassword(password, storedHash, storedSalt);
-        }
-
-        private bool IsPasswordStrong(string password)
-        {
-            return PenangGoApp.DataAccess.PasswordUtility.IsPasswordStrong(password);
-        }
     }
-} 
+}

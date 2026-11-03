@@ -1,0 +1,35 @@
+<a href="/event/@Event.Id" class="card-l1 d-flex flex-col" style="text-decoration:none;color:inherit;">
+    <img class="card-image" src="@(string.IsNullOrEmpty(Event.ImageUrl) ? "/images/penanggo_logo.png" : Event.ImageUrl)"
+         alt="@Event.Title" loading="lazy"
+         onerror="this.src='/images/penanggo_logo.png'" />
+    <div class="card-body flex-1">
+        <h3 class="card-title truncate">@Event.Title</h3>
+        <p class="card-subtitle truncate">@Event.Location</p>
+        <div class="d-flex items-center gap-8 mt-8">
+            <span class="text-xs text-secondary">@Event.StartTime.ToString("MMM dd, yyyy")</span>
+            @if (Event.Price > 0)
+            {
+                <span class="badge badge-gold">RM @Event.Price?.ToString("0.00")</span>
+            }
+            else
+            {
+                <span class="badge badge-teal">Free</span>
+            }
+        </div>
+        @{
+            var spotsLeft = Event.MaxCapacity - Event.CurrentBookings;
+        }
+        @if (spotsLeft <= 0)
+        {
+            <span class="badge badge-error mt-8">Sold Out</span>
+        }
+        else if (spotsLeft <= 5)
+        {
+            <span class="text-xs text-terracotta mt-8">@spotsLeft spots left</span>
+        }
+    </div>
+</a>
+
+@code {
+    [Parameter] public PenangGoApp.DataAccess.Event Event { get; set; } = default!;
+}

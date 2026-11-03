@@ -1,0 +1,19 @@
+<div class="state-container">
+    @if (!string.IsNullOrEmpty(Icon))
+    {
+        <div class="state-icon">@Icon</div>
+    }
+    <h3 class="state-title">@Title</h3>
+    <p class="state-description">@Description</p>
+    @if (ActionContent != null)
+    {
+        <div>@ActionContent</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Nothing here yet";
+    [Parameter] public string Description { get; set; } = "";
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public RenderFragment? ActionContent { get; set; }
+}

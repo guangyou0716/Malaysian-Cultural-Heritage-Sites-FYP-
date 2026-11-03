@@ -2,244 +2,245 @@
 @inject PenangGoAppFresh.Auth.AuthService AuthService
 @inject PenangGoAppFresh.Services.EventService EventService
 @inject PenangGoAppFresh.Services.HeritageSiteService HeritageSiteService
-@inject PenangGoAppFresh.Services.IApiBookingService BookingService
+@inject PenangGoAppFresh.Services.IBookingService BookingService
 @inject PenangGoAppFresh.Services.BookmarkService BookmarkService
 @inject PenangGoAppFresh.Services.ReviewService ReviewService
+@inject PenangGoAppFresh.Services.OfflineSyncService OfflineSync
 @inject NavigationManager Navigation
+@implements IDisposable
 
-<div class="dashboard-container fade-in">
-    <!-- Header Section -->
-    <div class="dashboard-header">
-        <div class="header-content">
-            <h1 class="dashboard-title">
-                <span class="title-icon">📊</span>
-                Welcome Back, @(AuthService?.CurrentUser?.Name ?? "Explorer")!
-            </h1>
-            <p class="dashboard-subtitle">Your cultural heritage journey continues here</p>
-        </div>
-    </div>
+<div class="l0-content" style="padding:var(--space-16);">
+    <PenangGoAppFresh.Components.Shared.PageHeader Title="@($"Welcome Back, {AuthService?.CurrentUser?.Name ?? "Explorer"}!")" Subtitle="Your cultural heritage journey continues here" />
 
-@if (AuthService == null || !AuthService.IsLoggedIn)
-{
-        <div class="auth-required">
-            <div class="auth-card">
-                <div class="auth-icon">🔐</div>
-                <h3>Authentication Required</h3>
-                <p>Please log in to access your personalized dashboard.</p>
-                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/login"))">Login Now</button>
+    @if (AuthService == null || !AuthService.IsLoggedIn)
+    {
+        <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-24 text-center" Style="max-width:480px;margin:var(--space-48) auto;">
+            <div style="font-size:48px;margin-bottom:var(--space-16);opacity:0.5;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
+            <h3 class="text-lg font-semibold text-primary mb-8">Authentication Required</h3>
+            <p class="text-sm text-secondary mb-24">Please log in to access your personalized dashboard.</p>
+            <button class="btn-glass btn-primary-heritage" @onclick="@(() => Navigation.NavigateTo("/login"))">Login Now</button>
+        </PenangGoAppFresh.Components.Shared.GlassSurface>
+    }
+    else if (AuthService.CurrentUser == null)
+    {
+        <div class="p-24 text-center">
+            <PenangGoAppFresh.Components.Shared.Skeleton Variant="title" Style="width:200px;margin:0 auto var(--space-12);" />
+            <PenangGoAppFresh.Components.Shared.Skeleton Variant="text" Style="width:300px;margin:0 auto;" />
         </div>
-}
-else if (AuthService.CurrentUser == null)
-{
-        <div class="loading-state">
-            <div class="loading-spinner"></div>
-            <p>Loading your profile...</p>
-        </div>
-}
-else
-{
+    }
+    else
+    {
+        <!-- Sync status -->
+        @if (OfflineSync.State == PenangGoAppFresh.Services.OfflineSyncState.Offline ||
+             OfflineSync.State == PenangGoAppFresh.Services.OfflineSyncState.Conflict)
+        {
+            <div class="l1-material mb-24" style="padding:var(--space-12) var(--space-16);">
+                <span class="text-sm text-secondary">@GetSyncStatusText()</span>
+            </div>
+        }
+
         <!-- Quick Stats -->
-        <div class="stats-overview">
-            <div class="stat-card">
-                <div class="stat-icon">🔖</div>
-                <div class="stat-content">
-                    <h3 class="stat-number">@(userBookmarks?.Count ?? 0)</h3>
-                    <p class="stat-label">My Bookmarks</p>
+        <div class="d-grid gap-16 mb-24" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));">
+            <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16 d-flex items-center gap-12">
+                <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(26,122,109,0.1);display:flex;align-items:center;justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
                 </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📅</div>
-                <div class="stat-content">
-                    <h3 class="stat-number">@(userBookings?.Count ?? 0)</h3>
-                    <p class="stat-label">My Bookings</p>
+                <div>
+                    <div class="text-xl font-bold text-primary">@((userBookmarks?.Count ?? 0))</div>
+                    <div class="text-xs text-secondary">Bookmarks</div>
                 </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">⭐</div>
-                <div class="stat-content">
-                    <h3 class="stat-number">@(userReviews?.Count ?? 0)</h3>
-                    <p class="stat-label">My Reviews</p>
+            </PenangGoAppFresh.Components.Shared.GlassSurface>
+
+            <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16 d-flex items-center gap-12">
+                <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(184,146,63,0.1);display:flex;align-items:center;justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🏆</div>
-                <div class="stat-content">
-                    <h3 class="stat-number">@GetBadgeCount()</h3>
-                    <p class="stat-label">Badges Earned</p>
+                <div>
+                    <div class="text-xl font-bold text-primary">@((userBookings?.Count ?? 0))</div>
+                    <div class="text-xs text-secondary">Bookings</div>
                 </div>
-            </div>
+            </PenangGoAppFresh.Components.Shared.GlassSurface>
+
+            <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16 d-flex items-center gap-12">
+                <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(196,87,58,0.1);display:flex;align-items:center;justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-terracotta)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <div>
+                    <div class="text-xl font-bold text-primary">@((userReviews?.Count ?? 0))</div>
+                    <div class="text-xs text-secondary">Reviews</div>
+                </div>
+            </PenangGoAppFresh.Components.Shared.GlassSurface>
+
+            <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-16 d-flex items-center gap-12">
+                <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(184,146,63,0.1);display:flex;align-items:center;justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                </div>
+                <div>
+                    <div class="text-xl font-bold text-primary">@GetBadgeCount()</div>
+                    <div class="text-xs text-secondary">Badges</div>
+                </div>
+            </PenangGoAppFresh.Components.Shared.GlassSurface>
         </div>
+
+        <!-- Quick Actions -->
+        <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-24 mb-24">
+            <h3 class="text-md font-semibold text-primary mb-16">Quick Actions</h3>
+            <div class="d-grid gap-12" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));">
+                <button class="btn-glass" @onclick="@(() => Navigation.NavigateTo("/map"))">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+                    Explore Map
+                </button>
+                <button class="btn-glass" @onclick="@(() => Navigation.NavigateTo("/events"))">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Find Events
+                </button>
+                <button class="btn-glass" @onclick="@(() => Navigation.NavigateTo("/mybookmarks"))">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                    My Bookmarks
+                </button>
+                <button class="btn-glass" @onclick="@(() => Navigation.NavigateTo("/booking"))">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    My Bookings
+                </button>
+            </div>
+        </PenangGoAppFresh.Components.Shared.GlassSurface>
 
         <!-- Main Content Grid -->
-        <div class="dashboard-grid">
-            <!-- Quick Actions -->
-            <div class="dashboard-card quick-actions-card">
-                <div class="card-header">
-                    <div class="card-icon">⚡</div>
-                    <h3 class="card-title">Quick Actions</h3>
-                </div>
-                <div class="card-body">
-                    <div class="actions-grid">
-                        <div class="action-item clickable" @onclick="@(() => Navigation.NavigateTo("/map"))">
-                            <div class="action-icon">🗺️</div>
-                            <span>Explore Map</span>
-                        </div>
-                        <div class="action-item clickable" @onclick="@(() => Navigation.NavigateTo("/events"))">
-                            <div class="action-icon">🎉</div>
-                            <span>Find Events</span>
-                        </div>
-                        <div class="action-item clickable" @onclick="@(() => Navigation.NavigateTo("/mybookmarks"))">
-                            <div class="action-icon">🔖</div>
-                            <span>My Bookmarks</span>
-                        </div>
-                        <div class="action-item clickable" @onclick="@(() => Navigation.NavigateTo("/booking"))">
-                            <div class="action-icon">📅</div>
-                            <span>My Bookings</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+        <div class="d-grid gap-16" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));">
             <!-- Upcoming Events -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon">🎉</div>
-                    <h3 class="card-title">Upcoming Events</h3>
-                </div>
-                <div class="card-body">
+            <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-24">
+                <h3 class="text-md font-semibold text-primary mb-16">Upcoming Events</h3>
                 @if (events == null)
                 {
-                        <div class="loading-state">
-                            <div class="loading-spinner"></div>
-                            <p>Loading events...</p>
+                    @for (int i = 0; i < 3; i++)
+                    {
+                        <div class="d-flex gap-12 mb-16">
+                            <PenangGoAppFresh.Components.Shared.Skeleton Variant="text" Style="width:60px;height:48px;" />
+                            <div class="flex-1">
+                                <PenangGoAppFresh.Components.Shared.Skeleton Variant="title" Style="width:70%;" />
+                                <PenangGoAppFresh.Components.Shared.Skeleton Variant="text" Style="width:50%;" />
+                            </div>
                         </div>
+                    }
                 }
                 else if (events.Count == 0)
                 {
-                        <div class="empty-state">
-                            <div class="empty-icon">📅</div>
-                            <p>No upcoming events</p>
-                            <small>Check back later for new cultural events</small>
-                        </div>
+                    <PenangGoAppFresh.Components.Shared.EmptyState Title="No upcoming events" Description="Check back later for new cultural events" />
                 }
                 else
                 {
-                        <div class="events-list">
-                            @foreach (var ev in events.Take(5))
+                    <div class="d-flex flex-col gap-12">
+                        @foreach (var ev in events.Take(5))
                         {
-                                <div class="event-item clickable" @onclick="@(() => Navigation.NavigateTo("/events"))">
-                                    <div class="event-date">
-                                        <div class="date-day">@ev.StartTime.ToString("dd")</div>
-                                        <div class="date-month">@ev.StartTime.ToString("MMM")</div>
-                                    </div>
-                                    <div class="event-info">
-                                        <h4>@ev.Title</h4>
-                                        <p>@ev.Location</p>
-                                    </div>
-                                    <div class="event-arrow">→</div>
+                            <div class="d-flex items-center gap-12 p-12 rounded-md transition-fast" style="cursor:pointer;background:var(--canvas-surface);" @onclick="@(() => Navigation.NavigateTo("/events"))">
+                                <div class="text-center rounded-md p-8" style="background:var(--heritage-teal);color:var(--on-teal);min-width:52px;">
+                                    <div class="text-lg font-bold" style="line-height:1;">@ev.StartTime.ToString("dd")</div>
+                                    <div class="text-xs">@ev.StartTime.ToString("MMM")</div>
                                 </div>
-                        }
-                        </div>
-                }
-            </div>
-        </div>
-
-            <!-- Featured Heritage Sites -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon">🏛️</div>
-                    <h3 class="card-title">Featured Heritage Sites</h3>
-                </div>
-                <div class="card-body">
-                @if (sites == null)
-                {
-                        <div class="loading-state">
-                            <div class="loading-spinner"></div>
-                            <p>Loading sites...</p>
-                        </div>
-                }
-                else if (sites.Count == 0)
-                {
-                        <div class="empty-state">
-                            <div class="empty-icon">🏛️</div>
-                            <p>No sites found</p>
-                            <small>Heritage sites will appear here</small>
-                        </div>
-                }
-                else
-                {
-                        <div class="sites-list">
-                            @foreach (var site in sites.Take(4))
-                        {
-                                <div class="site-item clickable" @onclick="@(() => Navigation.NavigateTo($"/site/{site.Id}"))">
-                                    <div class="site-icon">🏛️</div>
-                                    <div class="site-info">
-                                        <h4>@site.Name</h4>
-                                        <p>@(string.IsNullOrEmpty(site.Description) ? "No description available" : site.Description.Substring(0, Math.Min(50, site.Description.Length)) + "...")</p>
-                                    </div>
-                                    <div class="site-arrow">→</div>
+                                <div class="flex-1" style="min-width:0;">
+                                    <div class="text-sm font-medium text-primary truncate">@ev.Title</div>
+                                    <div class="text-xs text-secondary truncate">@ev.Location</div>
                                 </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <!-- Recent Activity -->
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <div class="card-icon">📈</div>
-                    <h3 class="card-title">Recent Activity</h3>
-                </div>
-                <div class="card-body">
-                    <div class="activity-list">
-                        @if (userBookmarks?.Count > 0)
-                        {
-                            var latestBookmark = userBookmarks.OrderByDescending(b => b.CreatedAt).First();
-                            <div class="activity-item">
-                                <div class="activity-icon">🔖</div>
-                                <div class="activity-content">
-                                    <p>Bookmarked <strong>@(latestBookmark.Site?.Name ?? "Unknown Site")</strong></p>
-                                    <small>@latestBookmark.CreatedAt.ToString("MMM dd, yyyy")</small>
-                                </div>
-                            </div>
-                        }
-                        @if (userReviews?.Count > 0)
-                        {
-                            var latestReview = userReviews.OrderByDescending(r => r.CreatedAt).First();
-                            <div class="activity-item">
-                                <div class="activity-icon">⭐</div>
-                                <div class="activity-content">
-                                    <p>Reviewed <strong>@(latestReview.Site?.Name ?? "Unknown Site")</strong></p>
-                                    <small>@latestReview.CreatedAt.ToString("MMM dd, yyyy")</small>
-                                </div>
-                            </div>
-                        }
-                        @if (userBookings?.Count > 0)
-                        {
-                            var latestBooking = userBookings.OrderByDescending(b => b.BookingTime).First();
-                            <div class="activity-item">
-                                <div class="activity-icon">📅</div>
-                                <div class="activity-content">
-                                    <p>Booked <strong>@(latestBooking.Event?.Title ?? "Unknown Event")</strong></p>
-                                    <small>@latestBooking.BookingTime.ToString("MMM dd, yyyy")</small>
-                                </div>
-                            </div>
-                        }
-                        @if ((userBookmarks?.Count ?? 0) == 0 && (userReviews?.Count ?? 0) == 0 && (userBookings?.Count ?? 0) == 0)
-                        {
-                            <div class="empty-state">
-                                <div class="empty-icon">📈</div>
-                                <p>No recent activity</p>
-                                <small>Start exploring to see your activity here</small>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                             </div>
                         }
                     </div>
-            </div>
+                }
+            </PenangGoAppFresh.Components.Shared.GlassSurface>
+
+            <!-- Featured Heritage Sites -->
+            <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-24">
+                <h3 class="text-md font-semibold text-primary mb-16">Featured Heritage Sites</h3>
+                @if (sites == null)
+                {
+                    @for (int i = 0; i < 3; i++)
+                    {
+                        <div class="d-flex gap-12 mb-16">
+                            <PenangGoAppFresh.Components.Shared.Skeleton Variant="avatar" />
+                            <div class="flex-1">
+                                <PenangGoAppFresh.Components.Shared.Skeleton Variant="title" Style="width:70%;" />
+                                <PenangGoAppFresh.Components.Shared.Skeleton Variant="text" Style="width:50%;" />
+                            </div>
+                        </div>
+                    }
+                }
+                else if (sites.Count == 0)
+                {
+                    <PenangGoAppFresh.Components.Shared.EmptyState Title="No sites found" Description="Heritage sites will appear here" />
+                }
+                else
+                {
+                    <div class="d-flex flex-col gap-12">
+                        @foreach (var site in sites.Take(4))
+                        {
+                            <div class="d-flex items-center gap-12 p-12 rounded-md transition-fast" style="cursor:pointer;background:var(--canvas-surface);" @onclick="@(() => Navigation.NavigateTo($"/site/{site.Id}"))">
+                                <div style="width:40px;height:40px;border-radius:var(--radius-md);background:rgba(26,122,109,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                </div>
+                                <div class="flex-1" style="min-width:0;">
+                                    <div class="text-sm font-medium text-primary truncate">@site.Name</div>
+                                    <div class="text-xs text-secondary line-clamp-2">@(string.IsNullOrEmpty(site.Description) ? "No description available" : site.Description.Substring(0, Math.Min(50, site.Description.Length)) + "...")</div>
+                                </div>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                            </div>
+                        }
+                    </div>
+                }
+            </PenangGoAppFresh.Components.Shared.GlassSurface>
+
+            <!-- Recent Activity -->
+            <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-24">
+                <h3 class="text-md font-semibold text-primary mb-16">Recent Activity</h3>
+                <div class="d-flex flex-col gap-12">
+                    @if (userBookmarks?.Count > 0)
+                    {
+                        var latestBookmark = userBookmarks.OrderByDescending(b => b.CreatedAt).First();
+                        <div class="d-flex items-start gap-12 p-12 rounded-md" style="background:var(--canvas-surface);">
+                            <div style="width:32px;height:32px;border-radius:var(--radius-pill);background:rgba(26,122,109,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                            </div>
+                            <div>
+                                <p class="text-sm text-primary m-0">Bookmarked <strong>@(latestBookmark.Site?.Name ?? "Unknown Site")</strong></p>
+                                <small class="text-xs text-tertiary">@latestBookmark.CreatedAt.ToString("MMM dd, yyyy")</small>
+                            </div>
+                        </div>
+                    }
+                    @if (userReviews?.Count > 0)
+                    {
+                        var latestReview = userReviews.OrderByDescending(r => r.CreatedAt).First();
+                        <div class="d-flex items-start gap-12 p-12 rounded-md" style="background:var(--canvas-surface);">
+                            <div style="width:32px;height:32px;border-radius:var(--radius-pill);background:rgba(184,146,63,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            </div>
+                            <div>
+                                <p class="text-sm text-primary m-0">Reviewed <strong>@(latestReview.Site?.Name ?? "Unknown Site")</strong></p>
+                                <small class="text-xs text-tertiary">@latestReview.CreatedAt.ToString("MMM dd, yyyy")</small>
+                            </div>
+                        </div>
+                    }
+                    @if (userBookings?.Count > 0)
+                    {
+                        var latestBooking = userBookings.OrderByDescending(b => b.BookingTime).First();
+                        <div class="d-flex items-start gap-12 p-12 rounded-md" style="background:var(--canvas-surface);">
+                            <div style="width:32px;height:32px;border-radius:var(--radius-pill);background:rgba(184,146,63,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--heritage-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            </div>
+                            <div>
+                                <p class="text-sm text-primary m-0">Booked <strong>@(latestBooking.Event?.Title ?? "Unknown Event")</strong></p>
+                                <small class="text-xs text-tertiary">@latestBooking.BookingTime.ToString("MMM dd, yyyy")</small>
+                            </div>
+                        </div>
+                    }
+                    @if ((userBookmarks?.Count ?? 0) == 0 && (userReviews?.Count ?? 0) == 0 && (userBookings?.Count ?? 0) == 0)
+                    {
+                        <PenangGoAppFresh.Components.Shared.EmptyState Title="No recent activity" Description="Start exploring to see your activity here" />
+                    }
+                </div>
+            </PenangGoAppFresh.Components.Shared.GlassSurface>
         </div>
-    </div>
-}
+    }
 </div>
 
 @code {
@@ -251,6 +252,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        OfflineSync.StateChanged += OnSyncStateChanged;
         if (AuthService != null && AuthService.IsLoggedIn && AuthService.CurrentUser != null)
         {
             try
@@ -273,7 +275,7 @@ else
             // Load data sequentially to avoid threading issues
             events = await EventService.GetAllAsync();
             sites = await HeritageSiteService.GetAllAsync();
-            
+
             if (AuthService?.CurrentUser != null)
             {
                 userBookmarks = await BookmarkService.GetUserBookmarksAsync(AuthService.CurrentUser.Id);
@@ -289,9 +291,25 @@ else
             userBookmarks ??= new List<PenangGoApp.DataAccess.Bookmark>();
             userReviews ??= new List<PenangGoApp.DataAccess.Review>();
             userBookings ??= new List<PenangGoApp.DataAccess.Booking>();
-            
+
             Console.WriteLine($"Error in LoadDashboardData: {ex.Message}");
         }
+    }
+
+    private void OnSyncStateChanged() => InvokeAsync(StateHasChanged);
+
+    private string GetSyncStatusText() => OfflineSync.State switch
+    {
+        PenangGoAppFresh.Services.OfflineSyncState.Offline =>
+            "You're offline — showing cached data. Bookmarks will sync when you reconnect.",
+        PenangGoAppFresh.Services.OfflineSyncState.Conflict =>
+            "Sync failed — some changes couldn't be synced. Check your connection and try again.",
+        _ => ""
+    };
+
+    public void Dispose()
+    {
+        OfflineSync.StateChanged -= OnSyncStateChanged;
     }
 
     private int GetBadgeCount()
@@ -299,16 +317,16 @@ else
         try
         {
             int badgeCount = 0;
-            
+
             // Explorer badge: Visited 5+ heritage sites
             if (userBookmarks?.Count >= 5) badgeCount++;
-            
+
             // Reviewer badge: Shared 3+ reviews
             if (userReviews?.Count >= 3) badgeCount++;
-            
+
             // Event Goer badge: Attended events
             if (userBookings?.Count > 0) badgeCount++;
-            
+
             return badgeCount;
         }
         catch
@@ -316,4 +334,4 @@ else
             return 0; // Return 0 if there's any error
         }
     }
-} 
+}

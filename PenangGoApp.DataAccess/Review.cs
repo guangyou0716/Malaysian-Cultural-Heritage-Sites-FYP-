@@ -9,18 +9,20 @@ namespace PenangGoApp.DataAccess
     {
         [Key]
         public int Id { get; set; }
-        
+
         public int UserId { get; set; }
-        
+
         public int SiteId { get; set; }
-        
+
         public int Rating { get; set; }
-        
+
         [Required]
         public string Comment { get; set; } = string.Empty;
-        
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        
+
+        public ApprovalStatus ApprovalStatus { get; set; } = ApprovalStatus.Pending;
+
         // Navigation properties
         public virtual User User { get; set; } = null!;
         public virtual HeritageSite Site { get; set; } = null!;

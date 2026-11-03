@@ -1,0 +1,75 @@
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject NavigationManager Navigation
+
+<nav class="desktop-nav-rail l2-glass-dense hide-mobile" style="position:fixed;left:var(--space-12);top:50%;transform:translateY(-50%);width:72px;padding:var(--space-12) var(--space-8);z-index:var(--z-nav);">
+    <div class="d-flex flex-col items-center gap-16">
+        <a href="/" class="nav-rail-logo" aria-label="Home">
+            <img src="/images/penanggo_logo.png" alt="" style="width:36px;height:36px;border-radius:var(--radius-md);" />
+        </a>
+
+        <div style="width:24px;height:1px;background:var(--border-default);"></div>
+
+        @foreach (var item in NavItems)
+        {
+            var isActive = Navigation.Uri.EndsWith(item.Href, StringComparison.OrdinalIgnoreCase);
+            <button class="nav-rail-item @(isActive ? "nav-rail-active" : "")"
+                    @onclick="@(() => Navigation.NavigateTo(item.Href))"
+                    title="@item.Label" aria-label="@item.Label">
+                <span class="nav-rail-icon">@item.Icon</span>
+            </button>
+        }
+
+        @if (AuthService.IsLoggedIn && AuthService.IsAdmin)
+        {
+            <div style="width:24px;height:1px;background:var(--border-default);"></div>
+            <button class="nav-rail-item" @onclick="@(() => Navigation.NavigateTo("/admindashboard"))" title="Admin" aria-label="Admin Dashboard">
+                <span class="nav-rail-icon" style="color:var(--heritage-gold);">⚙</span>
+            </button>
+        }
+    </div>
+</nav>
+
+<style>
+    .nav-rail-item {
+        width: 44px; height: 44px;
+        display: flex; align-items: center; justify-content: center;
+        border: none; background: transparent; border-radius: var(--radius-md);
+        cursor: pointer; color: var(--text-secondary);
+        transition: all var(--duration-fast) var(--ease-default);
+    }
+    .nav-rail-item:hover {
+        background: rgba(0,0,0,0.06);
+        color: var(--text-primary);
+    }
+    .nav-rail-active {
+        background: rgba(26, 122, 109, 0.12);
+        color: var(--heritage-teal);
+    }
+    .nav-rail-icon { font-size: 20px; line-height: 1; }
+    .nav-rail-logo { display:flex; align-items:center; justify-content:center; }
+    @@media (prefers-color-scheme: dark) {
+        .nav-rail-item:hover { background: rgba(255,255,255,0.08); }
+    }
+</style>
+
+@code {
+    private record NavItem(string Href, string Icon, string Label);
+
+    private List<NavItem> NavItems => AuthService.IsLoggedIn
+        ? new()
+        {
+            new("/", "⌂", "Home"),
+            new("/map", "◎", "Map"),
+            new("/events", "▦", "Events"),
+            new("/dashboard", "◫", "Dashboard"),
+            new("/mybookmarks", "★", "Bookmarks"),
+            new("/settings", "⚙", "Settings"),
+        }
+        : new()
+        {
+            new("/", "⌂", "Home"),
+            new("/map", "◎", "Map"),
+            new("/events", "▦", "Events"),
+            new("/login", "→", "Login"),
+        };
+}

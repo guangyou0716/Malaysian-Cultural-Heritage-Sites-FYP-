@@ -1,0 +1,107 @@
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<div class="panorama-viewer-container l1-material" style="position:relative;overflow:hidden;border-radius:var(--radius-lg);">
+    @if (isLoading)
+    {
+        <div class="d-flex items-center justify-center" style="height:@(Height)px;">
+            <PenangGoAppFresh.Components.Shared.Skeleton Variant="image" Style=$"height:{Height}px;width:100%;" />
+        </div>
+    }
+    else if (hasError)
+    {
+        <PenangGoAppFresh.Components.Shared.ErrorState Title="Panorama unavailable"
+            Message="Could not load the 360° view." OnRetry="LoadPanorama" />
+    }
+    else
+    {
+        <div id="@ContainerId" style="height:@(Height)px;width:100%;background:#1a1a1a;"></div>
+    }
+
+    @if (!isLoading && !hasError)
+    {
+        <div style="position:absolute;bottom:var(--space-12);right:var(--space-12);display:flex;gap:var(--space-8);z-index:10;">
+            @if (gyroSupported && !gyroEnabled)
+            {
+                <button class="btn-glass btn-sm" @onclick="EnableGyroscope" title="Enable gyroscope (device orientation)">🧭 Gyro</button>
+            }
+            else if (gyroEnabled)
+            {
+                <button class="btn-glass btn-sm" disabled title="Gyroscope enabled">🧭 On</button>
+            }
+            <button class="btn-glass btn-sm" @onclick="ToggleFullscreen" title="Fullscreen">⛶</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? ImageUrl { get; set; }
+    [Parameter] public int Height { get; set; } = 400;
+    [Parameter] public bool AutoRotate { get; set; } = true;
+
+    private string ContainerId => $"pano-{Guid.NewGuid():N}";
+    private bool isLoading = true;
+    private bool hasError;
+    private bool gyroSupported;
+    private bool gyroEnabled;
+    private DotNetObjectReference<PanoramaViewer>? _dotNetRef;
+
+    private object ViewerOptions => new
+    {
+        autoRotate = AutoRotate ? -2 : 0,
+        showControls = true
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !string.IsNullOrEmpty(ImageUrl))
+        {
+            await LoadPanorama();
+        }
+    }
+
+    private async Task LoadPanorama()
+    {
+        if (string.IsNullOrEmpty(ImageUrl)) { hasError = true; isLoading = false; StateHasChanged(); return; }
+
+        try
+        {
+            isLoading = true; hasError = false; StateHasChanged();
+            await Task.Delay(100);
+            await JSRuntime.InvokeVoidAsync("panoramaViewer.init", ContainerId, ImageUrl, ViewerOptions);
+            try { gyroSupported = await JSRuntime.InvokeAsync<bool>("panoramaViewer.supportsGyro"); } catch { gyroSupported = false; }
+            isLoading = false;
+            StateHasChanged();
+        }
+        catch
+        {
+            hasError = true; isLoading = false; StateHasChanged();
+        }
+    }
+
+    private async Task EnableGyroscope()
+    {
+        try
+        {
+            var ok = await JSRuntime.InvokeAsync<bool>("panoramaViewer.enableGyroscope", ContainerId, ImageUrl, ViewerOptions);
+            if (ok)
+            {
+                gyroEnabled = true;
+                StateHasChanged();
+            }
+        }
+        catch { }
+    }
+
+    private async Task ToggleFullscreen()
+    {
+        try { await JSRuntime.InvokeVoidAsync("panoramaViewer.requestFullscreen", ContainerId); }
+        catch { }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JSRuntime.InvokeVoidAsync("panoramaViewer.destroy", ContainerId); }
+        catch { }
+    }
+}

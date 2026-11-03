@@ -2,66 +2,96 @@
 @inject PenangGoAppFresh.Auth.IAuthService AuthService
 @inject NavigationManager Navigation
 
-<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="card shadow-lg p-4" style="max-width: 400px; width: 100%;">
-        <div class="text-center mb-4">
-            <img src="/images/penanggo_logo.png" alt="PenangGo Logo" style="max-width: 100px;" />
+<div class="d-flex items-center justify-center" style="min-height:80vh;padding:var(--space-16);">
+    <PenangGoAppFresh.Components.Shared.GlassSurface Level="1" Class="p-24" Style="max-width:420px;width:100%;">
+        <div class="text-center mb-24">
+            <img src="/images/penanggo_logo.png" alt="PenangGo Logo" style="max-width:80px;margin-bottom:var(--space-12);" />
+            <h1 class="text-2xl font-bold tracking-tight m-0">Create Account</h1>
+            <p class="text-sm text-secondary mt-4">Join PenangGo to explore cultural heritage</p>
         </div>
-        <h3 class="text-center mb-3">Sign Up</h3>
+
         @if (!string.IsNullOrEmpty(error))
         {
-            <div class="alert alert-danger">@error</div>
-        }
-        <div class="mb-3">
-            <label for="name" class="form-label">Name</label>
-            <input type="text" class="form-control @(nameError ? "is-invalid" : "")" id="name" @bind="name" @onblur="ValidateName" />
-            @if (nameError)
-            {
-                <div class="invalid-feedback">@nameErrorMessage</div>
-            }
-        </div>
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input type="email" class="form-control @(emailError ? "is-invalid" : "")" id="email" @bind="email" @onblur="ValidateEmail" />
-            @if (emailError)
-            {
-                <div class="invalid-feedback">@emailErrorMessage</div>
-            }
-        </div>
-        <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" class="form-control @(passwordError ? "is-invalid" : "")" id="password" @bind="password" @onblur="ValidatePassword" />
-            <div class="password-requirements mt-2">
-                <small class="text-muted">Password requirements:</small>
-                <ul class="list-unstyled small mt-1">
-                    <li class="@(passwordLength ? "text-success" : "text-muted")">✓ At least 8 characters</li>
-                    <li class="@(passwordUpper ? "text-success" : "text-muted")">✓ One uppercase letter</li>
-                    <li class="@(passwordLower ? "text-success" : "text-muted")">✓ One lowercase letter</li>
-                    <li class="@(passwordDigit ? "text-success" : "text-muted")">✓ One number</li>
-                    <li class="@(passwordSpecial ? "text-success" : "text-muted")">✓ One special character (!@@#$%^&*)</li>
-                </ul>
+            <div style="padding:var(--space-12);border-radius:var(--radius-md);background:rgba(196,58,58,0.1);color:var(--color-error);margin-bottom:var(--space-16);">
+                <span class="text-sm">@error</span>
             </div>
-            @if (passwordError)
-            {
-                <div class="invalid-feedback">@passwordErrorMessage</div>
-            }
+        }
+
+        <div class="d-flex flex-col gap-16">
+            <div>
+                <label class="text-sm font-medium text-secondary d-block mb-8">Name</label>
+                <input class="input-glass @(nameError ? "is-invalid" : "")" @bind="name" @onblur="ValidateName" placeholder="Your name"
+                       style="@(nameError ? "border-color:var(--color-error);" : "")" />
+                @if (nameError)
+                {
+                    <div class="text-xs mt-4" style="color:var(--color-error);">@nameErrorMessage</div>
+                }
+            </div>
+            <div>
+                <label class="text-sm font-medium text-secondary d-block mb-8">Email</label>
+                <input class="input-glass @(emailError ? "is-invalid" : "")" type="email" @bind="email" @onblur="ValidateEmail" placeholder="your@email.com"
+                       style="@(emailError ? "border-color:var(--color-error);" : "")" />
+                @if (emailError)
+                {
+                    <div class="text-xs mt-4" style="color:var(--color-error);">@emailErrorMessage</div>
+                }
+            </div>
+            <div>
+                <label class="text-sm font-medium text-secondary d-block mb-8">Password</label>
+                <input class="input-glass @(passwordError ? "is-invalid" : "")" type="password" @bind="password" @onblur="ValidatePassword" placeholder="Create a password"
+                       style="@(passwordError ? "border-color:var(--color-error);" : "")" />
+                <div class="mt-8">
+                    <div class="text-xs text-tertiary mb-8">Password requirements:</div>
+                    <div class="d-flex flex-col gap-4">
+                        <div class="d-flex items-center gap-8 text-xs @(passwordLength ? "text-teal" : "text-tertiary")">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            At least 8 characters
+                        </div>
+                        <div class="d-flex items-center gap-8 text-xs @(passwordUpper ? "text-teal" : "text-tertiary")">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            One uppercase letter
+                        </div>
+                        <div class="d-flex items-center gap-8 text-xs @(passwordLower ? "text-teal" : "text-tertiary")">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            One lowercase letter
+                        </div>
+                        <div class="d-flex items-center gap-8 text-xs @(passwordDigit ? "text-teal" : "text-tertiary")">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            One number
+                        </div>
+                        <div class="d-flex items-center gap-8 text-xs @(passwordSpecial ? "text-teal" : "text-tertiary")">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            One special character (!@@#$%^&*)
+                        </div>
+                    </div>
+                </div>
+                @if (passwordError)
+                {
+                    <div class="text-xs mt-4" style="color:var(--color-error);">@passwordErrorMessage</div>
+                }
+            </div>
+            <button class="btn-glass btn-primary-heritage btn-lg w-full" @onclick="SignupUser" disabled="@(isLoading || !IsFormValid())">
+                @if (isLoading)
+                {
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:signup-spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                    <span>Creating Account...</span>
+                }
+                else
+                {
+                    <span>Sign Up</span>
+                }
+            </button>
         </div>
-        <button class="btn btn-primary w-100" @onclick="SignupUser" disabled="@(isLoading || !IsFormValid())">
-            @if (isLoading)
-            {
-                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                <span>Creating Account...</span>
-            }
-            else
-            {
-                <span>Sign Up</span>
-            }
-        </button>
-        <div class="text-center mt-3">
-            <button class="btn btn-link" @onclick="@(() => NavigateTo("/login"))">Already have an account? Login</button>
-        </div>
-    </div>
+
+        <p class="text-sm text-secondary text-center mt-24">
+            Already have an account? <a href="/login" class="text-teal font-medium" style="text-decoration:none;">Login</a>
+        </p>
+    </PenangGoAppFresh.Components.Shared.GlassSurface>
 </div>
+
+<style>
+    @@keyframes signup-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
 
 @code {
     private string name = string.Empty;
@@ -143,7 +173,7 @@
         passwordUpper = password.Any(char.IsUpper);
         passwordLower = password.Any(char.IsLower);
         passwordDigit = password.Any(char.IsDigit);
-        
+
         var specialChars = @"!@#$%^&*()_+-=[]{}|;:,.<>?";
         passwordSpecial = password.Any(c => specialChars.Contains(c));
 
@@ -171,11 +201,11 @@
 
     private bool IsFormValid()
     {
-        return !string.IsNullOrWhiteSpace(name) && 
-               !string.IsNullOrWhiteSpace(email) && 
+        return !string.IsNullOrWhiteSpace(name) &&
+               !string.IsNullOrWhiteSpace(email) &&
                !string.IsNullOrWhiteSpace(password) &&
-               !nameError && 
-               !emailError && 
+               !nameError &&
+               !emailError &&
                !passwordError;
     }
 
@@ -197,7 +227,7 @@
         try
         {
             var result = await AuthService.SignupAsync(name, email, password);
-            
+
             if (result.Success)
             {
                 Navigation.NavigateTo("/dashboard");

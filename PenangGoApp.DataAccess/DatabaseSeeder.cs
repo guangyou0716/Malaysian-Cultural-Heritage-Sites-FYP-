@@ -9,11 +9,11 @@ public static class DatabaseSeeder
     public static async Task SeedAsync(string connectionString)
     {
         var services = new ServiceCollection();
-        
+
         // Configure services
         services.AddDbContext<PenangGoContext>(options =>
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
-        
+
         services.AddLogging(builder =>
         {
             builder.AddConsole();
@@ -37,11 +37,11 @@ public static class DatabaseSeeder
     public static async Task ClearAsync(string connectionString)
     {
         var services = new ServiceCollection();
-        
+
         // Configure services
         services.AddDbContext<PenangGoContext>(options =>
             options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
-        
+
         services.AddLogging(builder =>
         {
             builder.AddConsole();
@@ -57,7 +57,7 @@ public static class DatabaseSeeder
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<PenangGoContext>>();
 
             logger.LogInformation("Clearing all data...");
-            
+
             context.Bookings.RemoveRange(context.Bookings);
             context.Reviews.RemoveRange(context.Reviews);
             context.Bookmarks.RemoveRange(context.Bookmarks);
@@ -65,7 +65,7 @@ public static class DatabaseSeeder
             context.Events.RemoveRange(context.Events);
             context.HeritageSites.RemoveRange(context.HeritageSites);
             context.Users.RemoveRange(context.Users);
-            
+
             await context.SaveChangesAsync();
             logger.LogInformation("All data cleared successfully!");
             Console.WriteLine("✅ Database cleared successfully!");
@@ -76,4 +76,4 @@ public static class DatabaseSeeder
             throw;
         }
     }
-} 
+}

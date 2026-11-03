@@ -10,7 +10,8 @@ namespace PenangGoAppFresh.Services
         Task<Booking?> CreateBookingAsync(Booking booking);
         Task<Booking?> UpdateBookingAsync(Booking booking);
         Task<bool> UpdateBookingStatusAsync(int bookingId, BookingStatus status);
+        Task<Booking?> CancelBookingAsync(int bookingId);
         Task<bool> DeleteBookingAsync(int id);
         Task<Booking?> BookEventAsync(int userId, int eventId);
     }
-} 
+}

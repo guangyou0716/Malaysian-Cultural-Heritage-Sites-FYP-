@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <ProjectReference Include="..\PenangGoApp.DataAccess\PenangGoApp.DataAccess.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.*" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.3" />
   </ItemGroup>
 
@@ -15,6 +16,7 @@
     <!-- Exclude mobile platforms for API project -->
     <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
     <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+    <UserSecretsId>3aaf1f56-5a33-41fb-b8ca-bd33affc3690</UserSecretsId>
   </PropertyGroup>
 
 </Project>

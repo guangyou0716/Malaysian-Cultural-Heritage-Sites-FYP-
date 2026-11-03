@@ -45,7 +45,10 @@ public static class SeedData
             return;
         }
 
-        var adminHash = PasswordUtility.CreatePasswordHash("Admin123!");
+        // Dev-only seed accounts (known test credentials); the bootstrap admin password can be
+        // overridden via PENANGGO_ADMIN_PASSWORD for any shared/staging deployment.
+        var adminPassword = Environment.GetEnvironmentVariable("PENANGGO_ADMIN_PASSWORD") ?? "Admin123!";
+        var adminHash = PasswordUtility.CreatePasswordHash(adminPassword);
         var user1Hash = PasswordUtility.CreatePasswordHash("Password123!");
         var user2Hash = PasswordUtility.CreatePasswordHash("Password123!");
         var user3Hash = PasswordUtility.CreatePasswordHash("Password123!");
@@ -527,8 +530,8 @@ public static class SeedData
                 Title = "Komtar Tower Street View",
                 Description = "Panorama of Komtar Tower, Penang.",
                 PanoramaUrl = "https://www.google.com/maps/embed?pb=!4v1718199999999!6m8!1m7!1sCAoSLEFGMVFpcE1wZ2ZyQ2d6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6!2m2!1d5.4141!2d100.3288!3f0!4f0!5f0.7820865974627469",
-                HeritageSiteId = khooKongsi?.Id ?? 0, 
-                UploadedBy = adminUser.Id, 
+                HeritageSiteId = khooKongsi?.Id ?? 0,
+                UploadedBy = adminUser.Id,
                 UploadedAt = DateTime.UtcNow,
                 // Approval system fields for admin-created content
                 ApprovalStatus = ApprovalStatus.Approved,
@@ -540,8 +543,8 @@ public static class SeedData
                 Title = "Cheong Fatt Tze Mansion Street View",
                 Description = "Panorama of Cheong Fatt Tze Mansion, Penang.",
                 PanoramaUrl = "https://www.google.com/maps/embed?pb=!4v1718199999999!6m8!1m7!1sCAoSLEFGMVFpcE1wZ2ZyQ2d6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6!2m2!1d5.4214!2d100.3412!3f0!4f0!5f0.7820865974627469",
-                HeritageSiteId = blueMansion?.Id ?? 0, 
-                UploadedBy = adminUser.Id, 
+                HeritageSiteId = blueMansion?.Id ?? 0,
+                UploadedBy = adminUser.Id,
                 UploadedAt = DateTime.UtcNow,
                 // Approval system fields for admin-created content
                 ApprovalStatus = ApprovalStatus.Approved,
@@ -553,8 +556,8 @@ public static class SeedData
                 Title = "Pinang Peranakan Mansion Street View",
                 Description = "Panorama of Pinang Peranakan Mansion, Penang.",
                 PanoramaUrl = "https://www.google.com/maps/embed?pb=!4v1718199999999!6m8!1m7!1sCAoSLEFGMVFpcE1wZ2ZyQ2d6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6!2m2!1d5.4208!2d100.3418!3f0!4f0!5f0.7820865974627469",
-                HeritageSiteId = peranakanMansion?.Id ?? 0, 
-                UploadedBy = adminUser.Id, 
+                HeritageSiteId = peranakanMansion?.Id ?? 0,
+                UploadedBy = adminUser.Id,
                 UploadedAt = DateTime.UtcNow,
                 // Approval system fields for admin-created content
                 ApprovalStatus = ApprovalStatus.Approved,
@@ -566,8 +569,8 @@ public static class SeedData
                 Title = "Fort Cornwallis Street View",
                 Description = "Panorama of Fort Cornwallis, Penang.",
                 PanoramaUrl = "https://www.google.com/maps/embed?pb=!4v1718199999999!6m8!1m7!1sCAoSLEFGMVFpcE1wZ2ZyQ2d6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6!2m2!1d5.4219!2d100.3447!3f0!4f0!5f0.7820865974627469",
-                HeritageSiteId = fortCornwallis?.Id ?? 0, 
-                UploadedBy = adminUser.Id, 
+                HeritageSiteId = fortCornwallis?.Id ?? 0,
+                UploadedBy = adminUser.Id,
                 UploadedAt = DateTime.UtcNow,
                 // Approval system fields for admin-created content
                 ApprovalStatus = ApprovalStatus.Approved,
@@ -579,8 +582,8 @@ public static class SeedData
                 Title = "Penang Hill Railway Journey Street View",
                 Description = "Panorama of Penang Hill funicular railway journey, Penang.",
                 PanoramaUrl = "https://www.google.com/maps/embed?pb=!4v1718199999999!6m8!1m7!1sCAoSLEFGMVFpcE1wZ2ZyQ2d6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6b2Z6b3h6!2m2!1d5.4211!2d100.2756!3f0!4f0!5f0.7820865974627469",
-                HeritageSiteId = penangHill?.Id ?? 0, 
-                UploadedBy = adminUser.Id, 
+                HeritageSiteId = penangHill?.Id ?? 0,
+                UploadedBy = adminUser.Id,
                 UploadedAt = DateTime.UtcNow,
                 // Approval system fields for admin-created content
                 ApprovalStatus = ApprovalStatus.Approved,
@@ -716,4 +719,4 @@ public static class SeedData
 
         return comments[Random.Shared.Next(comments.Count)];
     }
-} 
+}

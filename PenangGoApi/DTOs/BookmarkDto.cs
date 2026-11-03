@@ -8,4 +8,4 @@ namespace PenangGoApi.DTOs
         public DateTime CreatedAt { get; set; }
         public HeritageSiteDto? Site { get; set; }
     }
-} 
+}

@@ -1,272 +1,281 @@
 @page "/map"
 @inject NavigationManager Navigation
 @inject PenangGoAppFresh.Services.HeritageSiteService HeritageSiteService
+@inject PenangGoAppFresh.Services.PanoramaContentService PanoramaService
+@inject PenangGoAppFresh.Services.OfflineSyncService OfflineSync
 @inject IJSRuntime JSRuntime
+@implements IDisposable
 
-<div class="map-container fade-in">
-    <!-- Map Header -->
-    <section class="map-header">
-        <div class="header-content">
-            <h1 class="page-title">Interactive Heritage Map</h1>
-            <p class="page-subtitle">Explore Penang's cultural heritage sites</p>
-        </div>
-        <div class="map-controls">
-            <button class="control-btn" @onclick="@(() => ToggleFilter())">
-                <span class="control-icon">🔍</span>
-                Filter
-            </button>
-        </div>
-    </section>
+<div class="map-page">
+    <!-- Search & Filter Bar -->
+    <div class="l2-glass" style="padding:var(--space-12) var(--space-16);margin-bottom:var(--space-16);display:flex;gap:var(--space-12);align-items:center;">
+        <input type="search" class="input-glass" placeholder="Search heritage sites..."
+               value="@searchQuery" @oninput="OnSearchInput" style="flex:1;" />
+        <button class="btn-glass btn-sm" @onclick="ToggleFilter">
+            Filters @(HasActiveFilters ? "•" : "")
+        </button>
+        <button class="btn-glass btn-sm" @onclick="LocateUser" title="Find my location">
+            📍
+        </button>
+    </div>
 
     <!-- Filter Panel -->
     @if (showFilter)
     {
-        <section class="filter-panel slide-in">
-            <div class="filter-content">
-                <h3>Filter Sites</h3>
-                <div class="filter-options">
-                    <div class="filter-group">
-                        <label>Category</label>
-                        <div class="checkbox-group">
-                            @foreach (var cat in allCategories)
-                            {
-                            <label class="checkbox-item">
-                                    <input type="checkbox" checked="@selectedCategories.Contains(cat)" @onchange="@((e) => UpdateCategoryFilter(cat, e.Value))" />
-                                <span class="checkmark"></span>
-                                    @cat
-                            </label>
-                            }
-                        </div>
-                    </div>
+        <div class="l1-material" style="padding:var(--space-16);margin-bottom:var(--space-16);">
+            <div class="d-flex items-center justify-between mb-12">
+                <h3 class="text-md font-semibold m-0">Filters</h3>
+                <button class="btn-glass btn-sm" @onclick="ClearFilters">Clear All</button>
+            </div>
+            <div class="mb-12">
+                <span class="text-xs text-secondary font-medium" style="display:block;margin-bottom:var(--space-8);">CATEGORY</span>
+                <div class="d-flex gap-8 flex-wrap">
+                    @foreach (var cat in allCategories)
+                    {
+                        var isActive = selectedCategories.Contains(cat);
+                        <PenangGoAppFresh.Components.Shared.FilterChip Label="@cat" IsActive="@isActive"
+                            IsActiveChanged="@((val) => ToggleCategory(cat, val))" />
+                    }
                 </div>
             </div>
-        </section>
+            <div class="d-flex gap-8">
+                <PenangGoAppFresh.Components.Shared.FilterChip Label="360° Panorama" IsActive="@filterPanorama"
+                    IsActiveChanged="@((val) => { filterPanorama = val; ApplyFilters(); })" />
+                <PenangGoAppFresh.Components.Shared.FilterChip Label="Accessible" IsActive="@filterAccessible"
+                    IsActiveChanged="@((val) => { filterAccessible = val; ApplyFilters(); })" />
+            </div>
+        </div>
     }
 
-    <!-- Map Area -->
-    <section class="map-area">
-        <div class="map-placeholder">
-            <div id="map" style="height:500px;width:100%"></div>
-        </div>
-    </section>
+    <div class="map-layout">
+        <div class="map-pane">
+            <!-- Map -->
+    <div class="l1-material" style="overflow:hidden;border-radius:var(--radius-lg);margin-bottom:var(--space-16);">
+        <div id="map" style="height:400px;width:100%;"></div>
+    </div>
 
-    <!-- Site List -->
-    <section class="site-list">
-        <h2>Nearby Heritage Sites</h2>
-        <div class="sites-grid">
+    <!-- Offline indicator -->
+    @if (OfflineSync.State == PenangGoAppFresh.Services.OfflineSyncState.Offline)
+    {
+        <div class="l1-material" style="padding:var(--space-12) var(--space-16);margin-bottom:var(--space-12);">
+            <span class="text-sm text-secondary">Offline — showing cached sites; map tiles may be unavailable.</span>
+        </div>
+    }
+
+    <!-- Location Status -->
+    @if (locationStatus != null)
+    {
+        <div class="text-xs text-secondary mb-8">@locationStatus</div>
+    }
+        </div> <!-- /map-pane -->
+        <div class="results-pane">
+
+    <!-- Results List -->
+    <div class="d-flex justify-between items-center mb-12">
+        <h2 class="text-lg font-semibold m-0">@filteredSites.Count Sites</h2>
+    </div>
+
+    @if (filteredSites.Count == 0)
+    {
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="No sites found" Description="Try adjusting your filters or search query." />
+    }
+    else
+    {
+        <div class="grid-auto-fill-sm">
             @foreach (var site in filteredSites)
             {
-                <div class="site-card" @onclick="@(() => ViewSiteDetails(site))">
-                    <div class="site-image" style="background-image: @site.Gradient">
-                        <div class="site-icon">@site.Icon</div>
-                    </div>
-                    <div class="site-content">
-                        <h3>@site.Name</h3>
-                        <p class="site-category">@site.Category</p>
-                        <p class="site-description">@site.Description</p>
-                        <div class="site-meta">
-                            <span class="distance">@site.Distance km away</span>
-                            <span class="rating">⭐ @site.Rating</span>
-                        </div>
-                        <div class="site-actions">
-                            <button class="btn btn-primary btn-sm"
-                                    @onclick:stopPropagation
-                                    @onclick="@(() => ViewSiteDetails(site))">
-                                <span class="btn-icon">👁️</span>
-                                View
-                            </button>
-                        </div>
-                    </div>
+                <div class="d-flex flex-col">
+                    <PenangGoAppFresh.Components.Shared.SiteCard Site="site" />
+                    @if (site.Latitude != 0 && site.Longitude != 0)
+                    {
+                        <button class="btn-glass btn-sm mt-8" style="align-self:flex-start;" @onclick="() => OpenDirections(site)">
+                            Get Directions
+                        </button>
+                    }
                 </div>
             }
         </div>
-    </section>
-
-    <!-- Selected Site Modal -->
-    @if (selectedSite != null)
-    {
-        <div class="modal-overlay" @onclick="@(() => CloseModal())">
-            <div class="modal-content" @onclick:stopPropagation="true">
-                <div class="modal-header">
-                    <h2>@selectedSite.Name</h2>
-                    <button class="close-btn" @onclick="@(() => CloseModal())">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="site-details">
-                        <div class="detail-row">
-                            <span class="detail-label">Category:</span>
-                            <span class="detail-value">@selectedSite.Category</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Location:</span>
-                            <span class="detail-value">@selectedSite.Location</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Hours:</span>
-                            <span class="detail-value">@selectedSite.Hours</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Entry Fee:</span>
-                            <span class="detail-value">@selectedSite.EntryFee</span>
-                        </div>
-                    </div>
-                    <p class="site-description-full">@selectedSite.FullDescription</p>
-                    <div class="modal-actions">
-                        <button class="btn btn-outline" @onclick="@(() => GetDirections(selectedSite))">
-                            <span class="btn-icon">🧭</span>
-                            Get Directions
-                        </button>
-                        @if (selectedSite.HasPanoramaContent)
-                        {
-                            <button class="btn btn-primary" @onclick="@(() => ViewPanorama(selectedSite))">
-                                <span class="btn-icon">📷</span>
-                                View 360°
-                            </button>
-                        }
-                        <button class="btn btn-primary" @onclick="@(() => ViewSiteDetails(selectedSite))">
-                            <span class="btn-icon">📖</span>
-                            Learn More
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
     }
+        </div> <!-- /results-pane -->
+    </div> <!-- /map-layout -->
 </div>
 
 @code {
-    private bool showFilter = false;
-    private HeritageSite? selectedSite = null;
-    private List<HeritageSite> allSites = new();
-    private List<HeritageSite> filteredSites = new();
-    private HashSet<string> selectedCategories = new();
-    private bool filterPanorama = false;
-    private bool filterAccessible = false;
+    [SupplyParameterFromQuery(Name = "category")]
+    public string? CategoryQuery { get; set; }
+
+    private List<PenangGoApp.DataAccess.HeritageSite> allSites = new();
+    private List<PenangGoApp.DataAccess.HeritageSite> filteredSites = new();
     private List<string> allCategories = new();
+    private HashSet<string> selectedCategories = new();
+    private bool showFilter;
+    private bool filterPanorama;
+    private bool filterAccessible;
+    private string searchQuery = "";
+    private string? locationStatus;
+    private double? userLat;
+    private double? userLng;
+
+    private bool HasActiveFilters =>
+        selectedCategories.Count < allCategories.Count || filterPanorama || filterAccessible;
 
     protected override async Task OnInitializedAsync()
     {
-        var dbSites = await HeritageSiteService.GetAllAsync();
-        allSites = dbSites.Select(s => new HeritageSite
-        { 
-            Id = s.Id,
-            Name = s.Name,
-            Category = s.Category ?? "",
-            Description = s.Description,
-            Location = s.Location,
-            Icon = "🏛️", // Optionally choose based on category
-            X = s.Longitude, // Use Longitude for X
-            Y = s.Latitude,  // Use Latitude for Y
-            Distance = 0, // Optionally calculate if you have user location
-            Rating = s.AverageRating,
-            HasPanoramaContent = s.HasPanoramaContent,
-            IsAccessible = s.IsAccessible,
-            Gradient = "linear-gradient(135deg, #D4AF37, #8B0000)", // Optionally choose based on category
-            Hours = s.VisitingHours ?? "",
-            EntryFee = s.EntryFee ?? "",
-            FullDescription = s.Description, // Or combine with other info
-            CreatedAt = s.CreatedAt
-        }).ToList();
-        allCategories = allSites.Select(s => s.Category).Distinct().ToList();
-        selectedCategories = allCategories.ToHashSet();
-        ApplyFilters();
+        OfflineSync.StateChanged += OnOfflineStateChanged;
+        try
+        {
+            // Cache-first: refreshes in the background when online, falls back to SQLite cache offline
+            allSites = await OfflineSync.GetHeritageSitesAsync();
+            allCategories = allSites.Select(s => s.Category).Where(c => !string.IsNullOrEmpty(c)).Distinct().ToList();
+            selectedCategories = allCategories.ToHashSet();
+
+            if (!string.IsNullOrEmpty(CategoryQuery) && allCategories.Contains(CategoryQuery))
+            {
+                selectedCategories = new HashSet<string> { CategoryQuery };
+                showFilter = true;
+            }
+
+            ApplyFilters();
+        }
+        catch { allSites = new(); filteredSites = new(); }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (filteredSites.Count == 0)
-            return;
-        // Center map on first site or Penang default
-        double centerLat = filteredSites[0].Y;
-        double centerLng = filteredSites[0].X;
-        int zoom = 13;
-        var sitesForJs = filteredSites.Select(s => new { name = s.Name, category = s.Category, x = s.X, y = s.Y }).ToList();
-        await JSRuntime.InvokeVoidAsync("leafletBlazor.initMap", "map", sitesForJs, centerLat, centerLng, zoom);
+        if (firstRender && filteredSites.Count > 0)
+        {
+            var centerLat = filteredSites.Average(s => s.Latitude);
+            var centerLng = filteredSites.Average(s => s.Longitude);
+            var markers = filteredSites
+                .Where(s => s.Latitude != 0 && s.Longitude != 0)
+                .Select(s => new { name = s.Name, category = s.Category, x = s.Longitude, y = s.Latitude })
+                .ToList();
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("leafletBlazor.initMap", "map", markers, centerLat, centerLng, 13);
+            }
+            catch { /* JS interop may fail in prerender */ }
+        }
     }
 
-    private void ToggleFilter()
-    {
-        showFilter = !showFilter;
-    }
+    private void ToggleFilter() => showFilter = !showFilter;
 
-    private void ToggleSearch()
+    private void ToggleCategory(string cat, bool active)
     {
-        // Implement location search
-    }
-
-    private void UpdateCategoryFilter(string category, object? value)
-    {
-        if (selectedCategories.Contains(category))
-            selectedCategories.Remove(category);
-        else
-            selectedCategories.Add(category);
+        if (active) selectedCategories.Add(cat);
+        else selectedCategories.Remove(cat);
         ApplyFilters();
     }
 
-    private void UpdatePanoramaFilter(object? value)
+    private void ClearFilters()
     {
-        filterPanorama = !filterPanorama;
-        ApplyFilters();
-    }
-
-    private void UpdateAccessibleFilter(object? value)
-    {
-        filterAccessible = !filterAccessible;
+        selectedCategories = allCategories.ToHashSet();
+        filterPanorama = false;
+        filterAccessible = false;
+        searchQuery = "";
         ApplyFilters();
     }
 
     private void ApplyFilters()
     {
         filteredSites = allSites
-            .Where(s => selectedCategories.Contains(s.Category))
+            .Where(s => string.IsNullOrEmpty(searchQuery) ||
+                        s.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                        (s.Description ?? "").Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                        (s.Category ?? "").Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+            .Where(s => selectedCategories.Contains(s.Category ?? ""))
             .Where(s => !filterPanorama || s.HasPanoramaContent)
             .Where(s => !filterAccessible || s.IsAccessible)
+            .OrderBy(s =>
+            {
+                if (userLat.HasValue && userLng.HasValue && s.Latitude != 0 && s.Longitude != 0)
+                    return Haversine(userLat.Value, userLng.Value, s.Latitude, s.Longitude);
+                return 0.0;
+            })
             .ToList();
     }
 
-    private void SelectSite(HeritageSite site)
+    private void OnSearchInput(ChangeEventArgs e)
     {
-        selectedSite = site;
+        searchQuery = e.Value?.ToString() ?? "";
+        ApplyFilters();
     }
 
-    private void CloseModal()
+    private async Task OpenDirections(PenangGoApp.DataAccess.HeritageSite site)
     {
-        selectedSite = null;
+        var lat = site.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var lng = site.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var destination = $"{lat},{lng}";
+        string uri;
+#if ANDROID
+        uri = $"https://www.google.com/maps/dir/?api=1&destination={destination}";
+#else
+        uri = $"bingmaps:?rtp=~pos.{destination.Replace(",", "_")}";
+#endif
+        try
+        {
+            await Microsoft.Maui.ApplicationModel.Launcher.Default.OpenAsync(uri);
+        }
+        catch { }
     }
 
-    private void ViewSiteDetails(HeritageSite site)
+    private async Task LocateUser()
     {
-        Navigation.NavigateTo($"/site/{site.Id}");
+        try
+        {
+            locationStatus = "Requesting location permission...";
+            StateHasChanged();
+
+            var status = await Microsoft.Maui.ApplicationModel.Permissions.CheckStatusAsync<Microsoft.Maui.ApplicationModel.Permissions.LocationWhenInUse>();
+            if (status != Microsoft.Maui.ApplicationModel.PermissionStatus.Granted)
+                status = await Microsoft.Maui.ApplicationModel.Permissions.RequestAsync<Microsoft.Maui.ApplicationModel.Permissions.LocationWhenInUse>();
+
+            if (status != Microsoft.Maui.ApplicationModel.PermissionStatus.Granted)
+            {
+                locationStatus = "Location permission denied — showing all sites.";
+                return;
+            }
+
+            locationStatus = "Locating...";
+            StateHasChanged();
+
+            var location = await Microsoft.Maui.Devices.Sensors.Geolocation.Default.GetLocationAsync(
+                new Microsoft.Maui.Devices.Sensors.GeolocationRequest(
+                    Microsoft.Maui.Devices.Sensors.GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10)));
+
+            if (location != null)
+            {
+                userLat = location.Latitude;
+                userLng = location.Longitude;
+                locationStatus = "Location acquired — showing nearest sites first.";
+            }
+            else
+            {
+                locationStatus = "Location unavailable — showing all sites.";
+            }
+        }
+        catch (Exception)
+        {
+            locationStatus = "Location unavailable — showing all sites.";
+        }
+        ApplyFilters();
     }
 
-    private void GetDirections(HeritageSite site)
+    private static double Haversine(double lat1, double lng1, double lat2, double lng2)
     {
-        // Implement directions functionality
+        var R = 6371.0;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLng = (lng2 - lng1) * Math.PI / 180;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180) *
+                Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
+        return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
     }
 
-    private void ViewPanorama(HeritageSite site)
+    public void Dispose()
     {
-        // Implement panorama viewing functionality
+        OfflineSync.StateChanged -= OnOfflineStateChanged;
     }
 
-    public class HeritageSite
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = "";
-        public string Category { get; set; } = "";
-        public string Icon { get; set; } = "";
-        public double X { get; set; }
-        public double Y { get; set; }
-        public double Distance { get; set; }
-        public double Rating { get; set; }
-        public bool HasPanoramaContent { get; set; }
-        public bool IsAccessible { get; set; }
-        public string Gradient { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string Location { get; set; } = "";
-        public string Hours { get; set; } = "";
-        public string EntryFee { get; set; } = "";
-        public string FullDescription { get; set; } = "";
-        public DateTime CreatedAt { get; set; }
-    }
-} 
+    private void OnOfflineStateChanged() => InvokeAsync(StateHasChanged);
+}

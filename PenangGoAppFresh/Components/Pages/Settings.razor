@@ -1,0 +1,170 @@
+@page "/settings"
+@inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject PenangGoAppFresh.Services.NotificationService NotificationService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<div style="max-width:640px;margin:0 auto;">
+    <PenangGoAppFresh.Components.Shared.PageHeader Title="Settings" Subtitle="App preferences and configuration" />
+
+    @if (!AuthService.IsLoggedIn)
+    {
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="Login required" Description="Please log in to access settings." Icon="⚙">
+            <button class="btn-glass btn-primary-heritage" @onclick="@(() => Navigation.NavigateTo("/login"))">Login</button>
+        </PenangGoAppFresh.Components.Shared.EmptyState>
+    }
+    else
+    {
+        <!-- Appearance -->
+        <div class="l1-material" style="padding:var(--space-24);margin-bottom:var(--space-24);">
+            <h3 class="text-md font-semibold mb-16">Appearance</h3>
+            <div class="d-flex flex-col gap-16">
+                <div class="d-flex justify-between items-center">
+                    <div>
+                        <div class="text-sm font-medium">Theme</div>
+                        <div class="text-xs text-secondary">Follow system appearance</div>
+                    </div>
+                    <select class="input-glass" style="width:auto;min-width:120px;" value="@themePreference" @onchange="OnThemeChanged">
+                        <option value="system">System</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </div>
+                <label class="d-flex items-center justify-between" style="cursor:pointer;">
+                    <div>
+                        <div class="text-sm font-medium">Reduce motion</div>
+                        <div class="text-xs text-secondary">Minimize animations</div>
+                    </div>
+                    <input type="checkbox" checked="@reduceMotion" @onchange="OnReduceMotionChanged" style="width:18px;height:18px;" />
+                </label>
+            </div>
+        </div>
+
+        <!-- Offline Data -->
+        <div class="l1-material" style="padding:var(--space-24);margin-bottom:var(--space-24);">
+            <h3 class="text-md font-semibold mb-16">Offline Data</h3>
+            <div class="d-flex flex-col gap-12">
+                <div class="d-flex justify-between items-center">
+                    <div>
+                        <div class="text-sm font-medium">Cached sites</div>
+                        <div class="text-xs text-secondary">@OfflineSyncService.CachedSiteCount sites stored for offline viewing</div>
+                    </div>
+                    <button class="btn-glass btn-sm" @onclick="ClearCache">Clear</button>
+                </div>
+                <div class="d-flex justify-between items-center">
+                    <div>
+                        <div class="text-sm font-medium">Last synced</div>
+                        <div class="text-xs text-secondary">@lastSyncText</div>
+                    </div>
+                    <button class="btn-glass btn-sm btn-primary-heritage" @onclick="SyncNow">Sync Now</button>
+                </div>
+                <div class="d-flex justify-between items-center">
+                    <div>
+                        <div class="text-sm font-medium">Sync status</div>
+                        <div class="text-xs text-secondary">@GetStateText() @(OfflineSyncService.OutboxCount > 0 ? $"· {OfflineSyncService.OutboxCount} queued" : "")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- About -->
+        <div class="l1-material" style="padding:var(--space-24);margin-bottom:var(--space-24);">
+            <h3 class="text-md font-semibold mb-16">About</h3>
+            <div class="d-flex flex-col gap-8">
+                <div class="d-flex justify-between">
+                    <span class="text-sm text-secondary">Version</span>
+                    <span class="text-sm font-medium">1.0.0</span>
+                </div>
+                <div class="d-flex justify-between">
+                    <span class="text-sm text-secondary">Build</span>
+                    <span class="text-sm font-medium">2025.08</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logout -->
+        <button class="btn-glass btn-accent-heritage w-full" @onclick="Logout">
+            Logout
+        </button>
+    }
+</div>
+
+@code {
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    [Inject] private PenangGoAppFresh.Services.OfflineSyncService OfflineSyncService { get; set; } = default!;
+
+    private string themePreference = "system";
+    private bool reduceMotion;
+    private string lastSyncText = "Never";
+
+    protected override void OnInitialized()
+    {
+        themePreference = PenangGoAppFresh.Services.AppSettings.Theme;
+        reduceMotion = PenangGoAppFresh.Services.AppSettings.ReduceMotion;
+        OfflineSyncService.StateChanged += OnSyncStateChanged;
+        RefreshSyncStatus();
+    }
+
+    private void OnSyncStateChanged() => InvokeAsync(StateHasChanged);
+
+    private string GetStateText() => OfflineSyncService.State switch
+    {
+        PenangGoAppFresh.Services.OfflineSyncState.Offline => "Offline — cached data will be used",
+        PenangGoAppFresh.Services.OfflineSyncState.Syncing => "Syncing…",
+        PenangGoAppFresh.Services.OfflineSyncState.Synced => "Synced",
+        PenangGoAppFresh.Services.OfflineSyncState.Conflict => "Conflict — sync failed, retry later",
+        _ => "Unknown"
+    };
+
+    public void Dispose()
+    {
+        OfflineSyncService.StateChanged -= OnSyncStateChanged;
+    }
+
+    private async Task OnThemeChanged(ChangeEventArgs e)
+    {
+        themePreference = e.Value?.ToString() ?? "system";
+        PenangGoAppFresh.Services.AppSettings.Theme = themePreference;
+        try { await JSRuntime.InvokeVoidAsync("penangGoTheme.apply", themePreference); } catch { }
+    }
+
+    private async Task OnReduceMotionChanged(ChangeEventArgs e)
+    {
+        reduceMotion = e.Value is true;
+        PenangGoAppFresh.Services.AppSettings.ReduceMotion = reduceMotion;
+        try { await JSRuntime.InvokeVoidAsync("penangGoTheme.setReducedMotion", reduceMotion); } catch { }
+    }
+
+    private void RefreshSyncStatus()
+    {
+        var last = OfflineSyncService.LastSyncTime;
+        lastSyncText = last.HasValue ? last.Value.ToLocalTime().ToString("MMM dd, yyyy HH:mm") : "Never";
+    }
+
+    private void ClearCache()
+    {
+        OfflineSyncService.ClearLocalCache();
+        RefreshSyncStatus();
+        StateHasChanged();
+        NotificationService.RaiseNotification("Cache cleared", "Offline data has been removed.");
+    }
+
+    private async Task SyncNow()
+    {
+        if (!OfflineSyncService.IsOnline)
+        {
+            NotificationService.RaiseNotification("Offline", "No network connection — cannot sync now.");
+            return;
+        }
+        await OfflineSyncService.SyncToLocalAsync();
+        RefreshSyncStatus();
+        StateHasChanged();
+        NotificationService.RaiseNotification("Sync complete", "Heritage sites and events are up to date.");
+    }
+
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/");
+    }
+}

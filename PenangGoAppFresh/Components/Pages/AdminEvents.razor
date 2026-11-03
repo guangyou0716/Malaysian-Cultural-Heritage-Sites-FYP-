@@ -5,192 +5,148 @@
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 
-<div class="admin-events-container fade-in">
-    <!-- Header Section -->
-    <div class="admin-header">
-        <div class="header-content">
-            <h1 class="page-title">
-                <span class="title-icon">🎉</span>
-                Events Management
-            </h1>
-            <p class="page-subtitle">Manage cultural events, festivals, and activities</p>
-        </div>
-    </div>
+<div>
+    <PenangGoAppFresh.Components.Shared.PageHeader Title="Events Management" Subtitle="Manage cultural events, festivals, and activities">
+        <PenangGoAppFresh.Components.Shared.StatusBadge Text="Admin" Variant="gold" />
+    </PenangGoAppFresh.Components.Shared.PageHeader>
 
     @if (!AuthService.IsAdmin)
     {
-        <div class="access-denied-section">
-            <div class="access-denied-card">
-                <div class="access-denied-icon">🚫</div>
-                <h3>Access Denied</h3>
-                <p>You do not have admin privileges to access this page</p>
-                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">
-                    <span class="btn-icon">🏠</span>
-                    Go to Dashboard
-                </button>
-            </div>
-        </div>
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="Access Denied" Description="You do not have admin privileges to access this page.">
+            <button class="btn-glass btn-primary-heritage" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">Go to Dashboard</button>
+        </PenangGoAppFresh.Components.Shared.EmptyState>
     }
     else if (events == null)
     {
-        <div class="loading-section">
-            <div class="loading-spinner">
-                <div class="spinner"></div>
-            </div>
-            <p>Loading events...</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-16);">
+            @for (int i = 0; i < 6; i++) { <PenangGoAppFresh.Components.Shared.Skeleton Variant="image" Style="height:160px;" /> }
         </div>
     }
     else if (events.Count == 0)
     {
-        <div class="empty-state-section">
-            <div class="empty-state-card">
-                <div class="empty-icon">🎉</div>
-                <h3>No Events Found</h3>
-                <p>There are no events in the system yet.</p>
-                <button class="btn btn-primary" @onclick="ShowAddModal">
-                    <span class="btn-icon">➕</span>
-                    Add First Event
-                </button>
-            </div>
-        </div>
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="No Events Found" Description="There are no events in the system yet.">
+            <button class="btn-glass btn-primary-heritage" @onclick="ShowAddModal">Add First Event</button>
+        </PenangGoAppFresh.Components.Shared.EmptyState>
     }
     else
     {
-        <div class="events-content">
-            <!-- Statistics Section -->
-            <div class="events-stats">
-                <div class="stat-card">
-                    <div class="stat-icon">🎉</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@events.Count</span>
-                        <span class="stat-label">Total Events</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📅</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@events.Count(e => e.StartTime > DateTime.Now)</span>
-                        <span class="stat-label">Upcoming</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@events.Count(e => e.IsActive)</span>
-                        <span class="stat-label">Active</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">💰</div>
-                    <div class="stat-info">
-                        <span class="stat-number">RM @(events.Where(e => e.Price.HasValue).Any() ? events.Where(e => e.Price.HasValue).Average(e => e.Price.Value).ToString("F0") : "0")</span>
-                        <span class="stat-label">Avg Price</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">👥</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@(events.Any() ? events.Average(e => e.MaxCapacity).ToString("F0") : "0")</span>
-                        <span class="stat-label">Avg Capacity</span>
-                    </div>
-                </div>
+        <!-- Statistics -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:var(--space-16);margin-bottom:var(--space-24);">
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@events.Count</div>
+                <div class="text-sm text-secondary mt-4">Total Events</div>
             </div>
-
-            <!-- Action Bar -->
-            <div class="action-bar">
-                <div class="search-section">
-                    <input type="text" class="form-control" placeholder="Search events..." @bind="searchTerm" />
-                </div>
-                <div class="action-buttons">
-                    <button class="btn btn-outline" @onclick="ClearSearch">
-                        <span class="btn-icon">🔄</span>
-                        Clear
-                    </button>
-                    <button class="btn btn-primary" @onclick="ShowAddModal">
-                        <span class="btn-icon">➕</span>
-                        Add New Event
-                    </button>
-                </div>
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@events.Count(e => e.StartTime > DateTime.Now)</div>
+                <div class="text-sm text-secondary mt-4">Upcoming</div>
             </div>
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@events.Count(e => e.IsActive)</div>
+                <div class="text-sm text-secondary mt-4">Active</div>
+            </div>
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">RM @(events.Where(e => e.Price.HasValue).Any() ? events.Where(e => e.Price.HasValue).Average(e => e.Price.Value).ToString("F0") : "0")</div>
+                <div class="text-sm text-secondary mt-4">Avg Price</div>
+            </div>
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@(events.Any() ? events.Average(e => e.MaxCapacity).ToString("F0") : "0")</div>
+                <div class="text-sm text-secondary mt-4">Avg Capacity</div>
+            </div>
+        </div>
 
-            <!-- Events Grid -->
-            <div class="events-grid">
-                @foreach (var ev in filteredEvents)
-                {
-                    <div class="event-card fade-in">
-                        <div class="event-header">
-                            <div class="event-status-badges">
-                                @if (ev.IsActive)
-                                {
-                                    <span class="status-badge status-active">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="status-badge status-inactive">Inactive</span>
-                                }
-                                @if (ev.StartTime > DateTime.Now)
-                                {
-                                    <span class="status-badge status-upcoming">Upcoming</span>
-                                }
-                                else if (ev.StartTime <= DateTime.Now && ev.EndTime >= DateTime.Now)
-                                {
-                                    <span class="status-badge status-ongoing">Ongoing</span>
-                                }
-                                else
-                                {
-                                    <span class="status-badge status-past">Past</span>
-                                }
-                            </div>
-                            <div class="event-id">#@ev.Id</div>
-                        </div>
-                        
-                        <div class="event-body">
-                            <div class="event-info">
-                                <h3 class="event-title">@ev.Title</h3>
-                                <div class="event-location">
-                                    <span class="location-icon">📍</span>
-                                    <span class="location-text">@ev.Location</span>
-                                </div>
-                                <div class="event-description">
-                                    @(ev.Description.Length > 150 ? ev.Description.Substring(0, 150) + "..." : ev.Description)
-                                </div>
-                                <div class="event-details">
-                                    <div class="detail-item">
-                                        <span class="detail-icon">📅</span>
-                                        <span class="detail-text">@ev.StartTime.ToString("MMM dd, yyyy HH:mm") - @ev.EndTime.ToString("MMM dd, yyyy HH:mm")</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-icon">💰</span>
-                                        <span class="detail-text">RM @(ev.Price?.ToString("F2") ?? "Free")</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-icon">👥</span>
-                                        <span class="detail-text">@ev.MaxCapacity people</span>
-                                    </div>
-                                    @if (!string.IsNullOrEmpty(ev.Type))
+        <!-- Action Bar -->
+        <div class="d-flex gap-12 mb-24 items-center" style="flex-wrap:wrap;">
+            <input type="text" class="input-glass" placeholder="Search events..." @bind="searchTerm" style="flex:1;min-width:200px;" />
+            <button class="btn-glass btn-sm" @onclick="ClearSearch">Clear</button>
+            <button class="btn-glass btn-sm btn-primary-heritage" @onclick="ShowAddModal">Add New Event</button>
+        </div>
+
+        <!-- Events Table -->
+        <div class="l1-material" style="overflow:hidden;">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="border-bottom:1px solid var(--border-subtle, rgba(255,255,255,0.08));">
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:left;">Event</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:left;">Location</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:left;">Date</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:center;">Price</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:center;">Capacity</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:center;">Status</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ev in pagedItems)
+                    {
+                        <tr style="border-bottom:1px solid var(--border-subtle, rgba(255,255,255,0.06));">
+                            <td style="padding:var(--space-12) var(--space-16);">
+                                <div class="text-md font-medium text-primary">@ev.Title</div>
+                                <div class="text-xs text-tertiary">#@ev.Id@(ev.Type != null ? $" \u00B7 {ev.Type}" : "")</div>
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);">
+                                <span class="text-sm text-secondary">@ev.Location</span>
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);">
+                                <div class="text-sm">@ev.StartTime.ToString("MMM dd, yyyy HH:mm")</div>
+                                <div class="text-xs text-tertiary">to @ev.EndTime.ToString("MMM dd, yyyy HH:mm")</div>
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);text-align:center;">
+                                <span class="text-sm font-medium">RM @(ev.Price?.ToString("F2") ?? "Free")</span>
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);text-align:center;">
+                                <span class="text-sm">@ev.MaxCapacity</span>
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);text-align:center;">
+                                <div class="d-flex gap-4" style="justify-content:center;flex-wrap:wrap;">
+                                    @if (ev.IsActive)
                                     {
-                                        <div class="detail-item">
-                                            <span class="detail-icon">🏷️</span>
-                                            <span class="detail-text">@ev.Type</span>
-                                        </div>
+                                        <PenangGoAppFresh.Components.Shared.StatusBadge Text="Active" Variant="teal" />
+                                    }
+                                    else
+                                    {
+                                        <PenangGoAppFresh.Components.Shared.StatusBadge Text="Inactive" Variant="terracotta" />
+                                    }
+                                    @if (ev.StartTime > DateTime.Now)
+                                    {
+                                        <PenangGoAppFresh.Components.Shared.StatusBadge Text="Upcoming" Variant="gold" />
+                                    }
+                                    else if (ev.StartTime <= DateTime.Now && ev.EndTime >= DateTime.Now)
+                                    {
+                                        <PenangGoAppFresh.Components.Shared.StatusBadge Text="Ongoing" Variant="teal" />
+                                    }
+                                    else
+                                    {
+                                        <PenangGoAppFresh.Components.Shared.StatusBadge Text="Past" Variant="neutral" />
                                     }
                                 </div>
-                            </div>
-                            
-                            <div class="event-actions">
-                                <button class="btn btn-sm btn-warning" @onclick="@(() => EditEvent(ev))" @onclick:stopPropagation="true">
-                                    <span class="btn-icon">✏️</span>
-                                    Edit
-                                </button>
-                                <button class="btn btn-sm btn-danger" @onclick="@(() => DeleteEvent(ev))" @onclick:stopPropagation="true">
-                                    <span class="btn-icon">🗑️</span>
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);text-align:right;">
+                                <div class="d-flex gap-8" style="justify-content:flex-end;">
+                                    <button class="btn-glass btn-sm" @onclick="@(() => EditEvent(ev))" @onclick:stopPropagation="true">Edit</button>
+                                    <button class="btn-glass btn-sm btn-accent-heritage" @onclick="@(() => DeleteEvent(ev))" @onclick:stopPropagation="true">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (!filteredEvents.Any())
+            {
+                <div style="padding:var(--space-32);text-align:center;">
+                    <PenangGoAppFresh.Components.Shared.EmptyState Title="No events found" Description="Try adjusting your search criteria." />
+                </div>
+            }
+            @if (TotalPages > 1)
+            {
+                <div class="d-flex justify-between items-center p-16" style="border-top:1px solid var(--border-subtle);">
+                    <span class="text-xs text-secondary">Showing @((ClampedPage - 1) * PageSize + 1)–@Math.Min(ClampedPage * PageSize, filteredEvents.Count()) of @filteredEvents.Count()</span>
+                    <div class="d-flex gap-8 items-center">
+                        <button class="btn-glass btn-sm" @onclick="PrevPage" disabled="@(currentPage <= 1)">Previous</button>
+                        <span class="text-xs text-secondary">Page @ClampedPage of @TotalPages</span>
+                        <button class="btn-glass btn-sm" @onclick="NextPage" disabled="@(currentPage >= TotalPages)">Next</button>
                     </div>
-                }
-            </div>
+                </div>
+            }
         </div>
     }
 </div>
@@ -198,87 +154,70 @@
 <!-- Add/Edit Event Modal -->
 @if (showModal)
 {
-    <div class="modal-overlay" @onclick="CloseModal">
-        <div class="modal-content" @onclick:stopPropagation="true">
-            <div class="modal-header">
-                <h3>@(isEditing ? "Edit Event: " + selectedEvent?.Title : "Add New Event")</h3>
-                <button class="modal-close" @onclick="CloseModal">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Title *:</label>
-                    <input type="text" class="form-control" @bind="editEvent.Title" placeholder="Enter event title" />
+    <div class="dialog-overlay" @onclick="CloseModal">
+        <div class="dialog-panel" @onclick:stopPropagation="true" style="max-width:560px;width:100%;">
+            <h3 class="dialog-title">@(isEditing ? "Edit Event: " + selectedEvent?.Title : "Add New Event")</h3>
+            <div style="display:grid;gap:var(--space-12);margin:var(--space-16) 0;">
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Title *</label>
+                    <input type="text" class="input-glass w-full" @bind="editEvent.Title" placeholder="Enter event title" />
                 </div>
-                <div class="form-group">
-                    <label>Description *:</label>
-                    <textarea class="form-control" @bind="editEvent.Description" rows="3" placeholder="Enter event description"></textarea>
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Description *</label>
+                    <textarea class="input-glass w-full" @bind="editEvent.Description" rows="3" placeholder="Enter event description"></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Location *:</label>
-                    <input type="text" class="form-control" @bind="editEvent.Location" placeholder="Enter event location" />
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Location *</label>
+                    <input type="text" class="input-glass w-full" @bind="editEvent.Location" placeholder="Enter event location" />
                 </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Start Time *:</label>
-                            <input type="datetime-local" class="form-control" value="@startTimeString" @onchange="@((e) => startTimeString = e.Value?.ToString() ?? "")" />
-                        </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-12);">
+                    <div>
+                        <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Start Time *</label>
+                        <input type="datetime-local" class="input-glass w-full" value="@startTimeString" @onchange="@((e) => startTimeString = e.Value?.ToString() ?? "")" />
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>End Time *:</label>
-                            <input type="datetime-local" class="form-control" value="@endTimeString" @onchange="@((e) => endTimeString = e.Value?.ToString() ?? "")" />
-                        </div>
+                    <div>
+                        <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">End Time *</label>
+                        <input type="datetime-local" class="input-glass w-full" value="@endTimeString" @onchange="@((e) => endTimeString = e.Value?.ToString() ?? "")" />
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Price (RM):</label>
-                            <input type="number" step="0.01" class="form-control" @bind="editEvent.Price" placeholder="0.00" />
-                        </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-12);">
+                    <div>
+                        <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Price (RM)</label>
+                        <input type="number" step="0.01" class="input-glass w-full" @bind="editEvent.Price" placeholder="0.00" />
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Capacity:</label>
-                            <input type="number" class="form-control" @bind="editEvent.MaxCapacity" placeholder="100" />
-                        </div>
+                    <div>
+                        <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Capacity</label>
+                        <input type="number" class="input-glass w-full" @bind="editEvent.MaxCapacity" placeholder="100" />
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Type:</label>
-                    <input type="text" class="form-control" @bind="editEvent.Type" placeholder="e.g., Festival, Workshop, Exhibition" />
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Type</label>
+                    <input type="text" class="input-glass w-full" @bind="editEvent.Type" placeholder="e.g., Festival, Workshop, Exhibition" />
                 </div>
-                <div class="form-group">
-                    <label>Image URL:</label>
-                    <input type="url" class="form-control" @bind="editEvent.ImageUrl" placeholder="https://example.com/event-image.jpg" />
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Image URL</label>
+                    <input type="url" class="input-glass w-full" @bind="editEvent.ImageUrl" placeholder="https://example.com/event-image.jpg" />
                 </div>
-                <div class="form-group">
-                    <label>Status:</label>
-                    <select class="form-control" @bind="editEvent.IsActive">
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Status</label>
+                    <select class="input-glass w-full" @bind="editEvent.IsActive">
                         <option value="@true">Active</option>
                         <option value="@false">Inactive</option>
                     </select>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
-                <button class="btn btn-primary" @onclick="SaveEvent" disabled="@isSaving">
-                    @if (isSaving)
-                    {
-                        <span class="btn-icon">⏳</span>
-                        <span>Saving...</span>
-                    }
-                    else
-                    {
-                        <span class="btn-icon">💾</span>
-                        <span>@(isEditing ? "Update Event" : "Add Event")</span>
-                    }
+            <div class="dialog-actions">
+                <button class="btn-glass btn-sm" @onclick="CloseModal">Cancel</button>
+                <button class="btn-glass btn-sm btn-primary-heritage" @onclick="SaveEvent" disabled="@isSaving">
+                    @(isSaving ? "Saving..." : (isEditing ? "Update Event" : "Add Event"))
                 </button>
             </div>
         </div>
     </div>
 }
+
+<!-- Confirm Dialog -->
+<PenangGoAppFresh.Components.Shared.ConfirmDialog IsVisible="showConfirm" Title="@confirmTitle" Message="@confirmMessage" IsDestructive="@confirmDestructive" OnConfirm="RunConfirm" OnCancel="CancelConfirm" />
 
 @code {
     private List<PenangGoApp.DataAccess.Event> events;
@@ -290,6 +229,41 @@
     private PenangGoApp.DataAccess.Event editEvent = new();
     private string startTimeString = "";
     private string endTimeString = "";
+
+    // Pagination
+    private const int PageSize = 10;
+    private int currentPage = 1;
+    private int ClampedPage => Math.Min(currentPage, TotalPages);
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(filteredEvents.Count() / (double)PageSize));
+    private IEnumerable<PenangGoApp.DataAccess.Event> pagedItems =>
+        filteredEvents.Skip((ClampedPage - 1) * PageSize).Take(PageSize);
+    private void NextPage() { if (currentPage < TotalPages) currentPage++; }
+    private void PrevPage() { if (currentPage > 1) currentPage--; }
+
+    // Shared confirm dialog
+    private bool showConfirm;
+    private string confirmTitle = "Confirm";
+    private string confirmMessage = "";
+    private bool confirmDestructive = true;
+    private Func<Task>? confirmAction;
+
+    private void OpenConfirm(string title, string message, Func<Task> action, bool destructive = true)
+    {
+        confirmTitle = title;
+        confirmMessage = message;
+        confirmAction = action;
+        confirmDestructive = destructive;
+        showConfirm = true;
+    }
+
+    private async Task RunConfirm()
+    {
+        showConfirm = false;
+        if (confirmAction != null)
+            await confirmAction();
+    }
+
+    private void CancelConfirm() => showConfirm = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -320,7 +294,7 @@
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                filtered = filtered.Where(e => 
+                filtered = filtered.Where(e =>
                     e.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                     e.Location.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                     e.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
@@ -380,8 +354,8 @@
 
     private async Task SaveEvent()
     {
-        if (string.IsNullOrWhiteSpace(editEvent.Title) || 
-            string.IsNullOrWhiteSpace(editEvent.Description) || 
+        if (string.IsNullOrWhiteSpace(editEvent.Title) ||
+            string.IsNullOrWhiteSpace(editEvent.Description) ||
             string.IsNullOrWhiteSpace(editEvent.Location))
         {
             NotificationService.RaiseNotification("Error", "Please fill in all required fields (Title, Description, Location)");
@@ -460,20 +434,18 @@
         }
     }
 
-    private async Task DeleteEvent(PenangGoApp.DataAccess.Event ev)
+    private void DeleteEvent(PenangGoApp.DataAccess.Event ev)
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"Are you sure you want to delete '{ev.Title}'?\n\n" +
-            $"Location: {ev.Location}\n" +
-            $"Date: {ev.StartTime.ToString("MMM dd, yyyy")}\n" +
-            $"This action cannot be undone.");
+        OpenConfirm("Delete Event",
+            $"Delete '{ev.Title}'?\nLocation: {ev.Location}\nDate: {ev.StartTime.ToString("MMM dd, yyyy")}\nThis action cannot be undone.",
+            () => DeleteEventConfirmed(ev));
+    }
 
-        if (!confirmed)
-            return;
-
+    private async Task DeleteEventConfirmed(PenangGoApp.DataAccess.Event ev)
+    {
         // Store original events list for potential rollback
         var originalEvents = events.ToList();
-        
+
         try
         {
             // Optimistically remove from UI
@@ -481,6 +453,7 @@
             StateHasChanged();
 
             await EventService.DeleteAsync(ev.Id);
+            currentPage = 1;
             NotificationService.RaiseNotification("Success", $"Event '{ev.Title}' deleted successfully");
         }
         catch (Exception ex)
@@ -501,5 +474,6 @@
     private void ClearSearch()
     {
         searchTerm = "";
+        currentPage = 1;
     }
-} 
+}

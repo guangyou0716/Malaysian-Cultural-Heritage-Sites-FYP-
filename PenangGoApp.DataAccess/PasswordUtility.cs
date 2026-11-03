@@ -41,4 +41,4 @@ namespace PenangGoApp.DataAccess
             return hasUpperCase && hasLowerCase && hasDigit && hasSpecialChar;
         }
     }
-} 
+}

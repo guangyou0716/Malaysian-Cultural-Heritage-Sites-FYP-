@@ -7,196 +7,154 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
-<div class="admin-panoramas-container fade-in">
-    <!-- Header Section -->
-    <div class="admin-header">
-        <div class="header-content">
-            <h1 class="page-title">
-                <span class="title-icon">🖼️</span>
-                Panorama Content Management
-            </h1>
-            <p class="page-subtitle">Manage 360° panorama content for heritage sites</p>
-        </div>
-    </div>
+<div>
+    <PenangGoAppFresh.Components.Shared.PageHeader Title="Panorama Content Management" Subtitle="Manage 360° panorama content for heritage sites">
+        <button class="btn-glass btn-sm btn-primary-heritage" @onclick="ShowAddModal">Add Panorama</button>
+        <PenangGoAppFresh.Components.Shared.StatusBadge Text="Admin" Variant="gold" />
+    </PenangGoAppFresh.Components.Shared.PageHeader>
 
     @if (!AuthService.IsAdmin)
     {
-        <div class="access-denied-section">
-            <div class="access-denied-card">
-                <div class="access-denied-icon">🚫</div>
-                <h3>Access Denied</h3>
-                <p>You do not have admin privileges to access this page</p>
-                <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">
-                    <span class="btn-icon">🏠</span>
-                    Go to Dashboard
-                </button>
-            </div>
-        </div>
+        <PenangGoAppFresh.Components.Shared.EmptyState Title="Access Denied" Description="You do not have admin privileges to access this page.">
+            <button class="btn-glass btn-primary-heritage" @onclick="@(() => Navigation.NavigateTo("/dashboard"))">Go to Dashboard</button>
+        </PenangGoAppFresh.Components.Shared.EmptyState>
     }
     else if (panoramas == null)
     {
-        <div class="loading-section">
-            <div class="loading-spinner">
-                <div class="spinner"></div>
-            </div>
-            <p>Loading panoramas...</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-16);">
+            @for (int i = 0; i < 4; i++) { <PenangGoAppFresh.Components.Shared.Skeleton Variant="image" Style="height:160px;" /> }
         </div>
     }
     else
     {
-        <div class="panoramas-content">
-            <!-- Statistics Section -->
-            <div class="panoramas-stats">
-                <div class="stat-card">
-                    <div class="stat-icon">🖼️</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@panoramas.Count</span>
-                        <span class="stat-label">Total Panoramas</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@panoramas.Count(p => p.ApprovalStatus == ApprovalStatus.Approved)</span>
-                        <span class="stat-label">Approved</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⏳</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@panoramas.Count(p => p.ApprovalStatus == ApprovalStatus.Pending)</span>
-                        <span class="stat-label">Pending Approval</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">❌</div>
-                    <div class="stat-info">
-                        <span class="stat-number">@panoramas.Count(p => p.ApprovalStatus == ApprovalStatus.Rejected)</span>
-                        <span class="stat-label">Rejected</span>
-                    </div>
-                </div>
+        <!-- Statistics -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:var(--space-16);margin-bottom:var(--space-24);">
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@panoramas.Count</div>
+                <div class="text-sm text-secondary mt-4">Total Panoramas</div>
             </div>
-
-            <!-- Filter Section -->
-            <div class="filter-section">
-                <div class="filter-controls">
-                    <select class="form-control" @bind="selectedSiteId">
-                        <option value="0">All Sites</option>
-                        @foreach (var site in heritageSites)
-                        {
-                            <option value="@site.Id">@site.Name</option>
-                        }
-                    </select>
-                    <select class="form-control" @bind="statusFilter">
-                        <option value="">All Statuses</option>
-                        <option value="@ApprovalStatus.Approved">Approved</option>
-                        <option value="@ApprovalStatus.Pending">Pending</option>
-                        <option value="@ApprovalStatus.Rejected">Rejected</option>
-                    </select>
-                    <button class="btn btn-outline" @onclick="ClearFilters">
-                        <span class="btn-icon">🔄</span>
-                        Clear Filters
-                    </button>
-                </div>
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@panoramas.Count(p => p.ApprovalStatus == ApprovalStatus.Approved)</div>
+                <div class="text-sm text-secondary mt-4">Approved</div>
             </div>
-
-            <!-- Action Bar -->
-            <div class="action-bar">
-                <button class="btn btn-primary" @onclick="ShowAddModal">
-                    <span class="btn-icon">➕</span>
-                    Add Panorama
-                </button>
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@panoramas.Count(p => p.ApprovalStatus == ApprovalStatus.Pending)</div>
+                <div class="text-sm text-secondary mt-4">Pending Approval</div>
             </div>
+            <div class="l1-material" style="padding:var(--space-16);text-align:center;">
+                <div class="text-xl font-bold" style="color:var(--heritage-teal);">@panoramas.Count(p => p.ApprovalStatus == ApprovalStatus.Rejected)</div>
+                <div class="text-sm text-secondary mt-4">Rejected</div>
+            </div>
+        </div>
 
-            <!-- Panoramas Grid -->
-            <div class="panoramas-grid">
-                @foreach (var panorama in filteredPanoramas)
+        <!-- Filter Section -->
+        <div class="d-flex gap-12 mb-24 items-center" style="flex-wrap:wrap;">
+            <select class="input-glass" @bind="selectedSiteId" style="min-width:180px;">
+                <option value="0">All Sites</option>
+                @foreach (var site in heritageSites)
                 {
-                    <div class="panorama-card fade-in">
-                        <div class="panorama-header">
-                            <div class="panorama-status-badges">
+                    <option value="@site.Id">@site.Name</option>
+                }
+            </select>
+            <select class="input-glass" @bind="statusFilter" style="min-width:160px;">
+                <option value="">All Statuses</option>
+                <option value="@ApprovalStatus.Approved">Approved</option>
+                <option value="@ApprovalStatus.Pending">Pending</option>
+                <option value="@ApprovalStatus.Rejected">Rejected</option>
+            </select>
+            <button class="btn-glass btn-sm" @onclick="ClearFilters">Clear Filters</button>
+        </div>
+
+        <!-- Panoramas Table -->
+        <div class="l1-material" style="overflow:hidden;">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="border-bottom:1px solid var(--border-subtle, rgba(255,255,255,0.08));">
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:left;">Panorama</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:left;">Heritage Site</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:left;">URL</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:center;">Uploaded</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:center;">Status</th>
+                        <th class="text-sm font-medium text-secondary" style="padding:var(--space-12) var(--space-16);text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var panorama in pagedItems)
+                    {
+                        <tr style="border-bottom:1px solid var(--border-subtle, rgba(255,255,255,0.06));">
+                            <td style="padding:var(--space-12) var(--space-16);">
+                                <div class="text-md font-medium text-primary">@panorama.Title</div>
+                                <div class="text-xs text-tertiary">#@panorama.Id</div>
+                                @if (!string.IsNullOrEmpty(panorama.Description))
+                                {
+                                    <div class="text-xs text-secondary mt-4" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                        @(panorama.Description.Length > 80 ? panorama.Description.Substring(0, 80) + "..." : panorama.Description)
+                                    </div>
+                                }
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);">
+                                <span class="text-sm text-secondary">@(heritageSites.FirstOrDefault(s => s.Id == panorama.HeritageSiteId)?.Name ?? "Unknown Site")</span>
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);">
+                                <span class="text-xs text-tertiary" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@panorama.PanoramaUrl</span>
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);text-align:center;">
+                                <div class="text-sm text-secondary">@panorama.UploadedAt.ToString("MMM dd, yyyy")</div>
+                                <div class="text-xs text-tertiary">@panorama.UploadedAt.ToString("HH:mm")</div>
+                                @if (panorama.ApprovalStatus == ApprovalStatus.Pending && panorama.Uploader != null)
+                                {
+                                    <div class="text-xs text-tertiary mt-4">by @panorama.Uploader.Name</div>
+                                }
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);text-align:center;">
                                 @if (panorama.ApprovalStatus == ApprovalStatus.Pending)
                                 {
-                                    <span class="status-badge status-pending">Pending Approval</span>
+                                    <PenangGoAppFresh.Components.Shared.StatusBadge Text="Pending" Variant="gold" />
                                 }
                                 else if (panorama.ApprovalStatus == ApprovalStatus.Rejected)
                                 {
-                                    <span class="status-badge status-rejected">Rejected</span>
+                                    <PenangGoAppFresh.Components.Shared.StatusBadge Text="Rejected" Variant="terracotta" />
                                 }
                                 else
                                 {
-                                    <span class="status-badge status-approved">Approved</span>
+                                    <PenangGoAppFresh.Components.Shared.StatusBadge Text="Approved" Variant="teal" />
                                 }
-                            </div>
-                            <div class="panorama-id">#@panorama.Id</div>
-                        </div>
-                        
-                        <div class="panorama-body">
-                            <div class="panorama-info">
-                                <h3 class="panorama-title">@panorama.Title</h3>
-                                <div class="panorama-site">
-                                    <span class="site-icon">🏛️</span>
-                                    <span class="site-name">@(heritageSites.FirstOrDefault(s => s.Id == panorama.HeritageSiteId)?.Name ?? "Unknown Site")</span>
+                            </td>
+                            <td style="padding:var(--space-12) var(--space-16);text-align:right;">
+                                <div class="d-flex gap-8" style="justify-content:flex-end;">
+                                    @if (panorama.ApprovalStatus == ApprovalStatus.Pending)
+                                    {
+                                        <button class="btn-glass btn-sm btn-primary-heritage" @onclick="@(() => ApprovePanorama(panorama))" @onclick:stopPropagation="true">Approve</button>
+                                        <button class="btn-glass btn-sm btn-accent-heritage" @onclick="@(() => RejectPanorama(panorama))" @onclick:stopPropagation="true">Reject</button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn-glass btn-sm" @onclick="@(() => EditPanorama(panorama))" @onclick:stopPropagation="true">Edit</button>
+                                        <button class="btn-glass btn-sm btn-accent-heritage" @onclick="@(() => DeletePanorama(panorama))" @onclick:stopPropagation="true">Delete</button>
+                                    }
                                 </div>
-                                <div class="panorama-description">
-                                    @(string.IsNullOrEmpty(panorama.Description) ? "No description provided" : 
-                                      panorama.Description.Length > 150 ? panorama.Description.Substring(0, 150) + "..." : panorama.Description)
-                                </div>
-                                
-                                @if (panorama.ApprovalStatus == ApprovalStatus.Pending)
-                                {
-                                    <div class="submission-info">
-                                        <div class="submitter-info">
-                                            <span class="submitter-icon">👤</span>
-                                            <span class="submitter-name">Submitted by: @(panorama.Uploader?.Name ?? "Unknown User")</span>
-                                        </div>
-                                        <div class="submission-date">
-                                            <span class="date-icon">📅</span>
-                                            <span class="date-text">Submitted: @panorama.UploadedAt.ToString("MMM dd, yyyy HH:mm")</span>
-                                        </div>
-                                    </div>
-                                }
-                                
-                                <div class="panorama-details">
-                                    <div class="detail-item">
-                                        <span class="detail-icon">🔗</span>
-                                        <span class="detail-text">@panorama.PanoramaUrl</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <span class="detail-icon">📅</span>
-                                        <span class="detail-text">Uploaded: @panorama.UploadedAt.ToString("MMM dd, yyyy HH:mm")</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="panorama-actions">
-                                @if (panorama.ApprovalStatus == ApprovalStatus.Pending)
-                                {
-                                    <button class="btn btn-sm btn-success" @onclick="@(() => ApprovePanorama(panorama))" @onclick:stopPropagation="true">
-                                        <span class="btn-icon">✅</span>
-                                        Approve
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" @onclick="@(() => RejectPanorama(panorama))" @onclick:stopPropagation="true">
-                                        <span class="btn-icon">❌</span>
-                                        Reject
-                                    </button>
-                                }
-                                else
-                                {
-                                    <button class="btn btn-sm btn-warning" @onclick="@(() => EditPanorama(panorama))" @onclick:stopPropagation="true">
-                                        <span class="btn-icon">✏️</span>
-                                        Edit
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" @onclick="@(() => DeletePanorama(panorama))" @onclick:stopPropagation="true">
-                                        <span class="btn-icon">🗑️</span>
-                                        Delete
-                                    </button>
-                                }
-                            </div>
-                        </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (!(filteredPanoramas?.Any() ?? false))
+            {
+                <div style="padding:var(--space-32);text-align:center;">
+                    <PenangGoAppFresh.Components.Shared.EmptyState Title="No panoramas found" Description="Try adjusting your filter criteria." />
+                </div>
+            }
+            @if (TotalPages > 1)
+            {
+                <div class="d-flex justify-between items-center p-16" style="border-top:1px solid var(--border-subtle);">
+                    <span class="text-xs text-secondary">Showing @((ClampedPage - 1) * PageSize + 1)–@Math.Min(ClampedPage * PageSize, FilteredItems.Count()) of @FilteredItems.Count()</span>
+                    <div class="d-flex gap-8 items-center">
+                        <button class="btn-glass btn-sm" @onclick="PrevPage" disabled="@(currentPage <= 1)">Previous</button>
+                        <span class="text-xs text-secondary">Page @ClampedPage of @TotalPages</span>
+                        <button class="btn-glass btn-sm" @onclick="NextPage" disabled="@(currentPage >= TotalPages)">Next</button>
                     </div>
-                }
-            </div>
+                </div>
+            }
         </div>
     }
 </div>
@@ -204,28 +162,25 @@
 <!-- Add/Edit Modal -->
 @if (showModal)
 {
-    <div class="modal-overlay" @onclick="CloseModal">
-        <div class="modal-content" @onclick:stopPropagation="true">
-            <div class="modal-header">
-                <h3>@(isEditing ? "Edit Panorama" : "Add Panorama")</h3>
-                <button class="modal-close" @onclick="CloseModal">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Title *:</label>
-                    <input type="text" class="form-control" @bind="editPanorama.Title" />
+    <div class="dialog-overlay" @onclick="CloseModal">
+        <div class="dialog-panel" @onclick:stopPropagation="true" style="max-width:480px;width:100%;">
+            <h3 class="dialog-title">@(isEditing ? "Edit Panorama" : "Add Panorama")</h3>
+            <div style="display:grid;gap:var(--space-12);margin:var(--space-16) 0;">
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Title *</label>
+                    <input type="text" class="input-glass w-full" @bind="editPanorama.Title" />
                 </div>
-                <div class="form-group">
-                    <label>Description:</label>
-                    <textarea class="form-control" @bind="editPanorama.Description"></textarea>
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Description</label>
+                    <textarea class="input-glass w-full" @bind="editPanorama.Description"></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Panorama URL *:</label>
-                    <input type="url" class="form-control" @bind="editPanorama.PanoramaUrl" />
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Panorama URL *</label>
+                    <input type="url" class="input-glass w-full" @bind="editPanorama.PanoramaUrl" />
                 </div>
-                <div class="form-group">
-                    <label>Heritage Site *:</label>
-                    <select class="form-control" @bind="editPanorama.HeritageSiteId">
+                <div>
+                    <label class="text-sm font-medium text-secondary" style="display:block;margin-bottom:4px;">Heritage Site *</label>
+                    <select class="input-glass w-full" @bind="editPanorama.HeritageSiteId">
                         @foreach (var site in heritageSites)
                         {
                             <option value="@site.Id">@site.Name</option>
@@ -233,24 +188,18 @@
                     </select>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
-                <button class="btn btn-primary" @onclick="SavePanorama" disabled="@isSaving">
-                    @if (isSaving) 
-                    { 
-                        <span class="btn-icon">⏳</span>
-                        <span>Saving...</span> 
-                    } 
-                    else 
-                    { 
-                        <span class="btn-icon">💾</span>
-                        <span>@(isEditing ? "Update" : "Add")</span> 
-                    }
+            <div class="dialog-actions">
+                <button class="btn-glass btn-sm" @onclick="CloseModal">Cancel</button>
+                <button class="btn-glass btn-sm btn-primary-heritage" @onclick="SavePanorama" disabled="@isSaving">
+                    @(isSaving ? "Saving..." : (isEditing ? "Update" : "Add"))
                 </button>
             </div>
         </div>
     </div>
 }
+
+<!-- Confirm Dialog -->
+<PenangGoAppFresh.Components.Shared.ConfirmDialog IsVisible="showConfirm" Title="@confirmTitle" Message="@confirmMessage" IsDestructive="@confirmDestructive" OnConfirm="RunConfirm" OnCancel="CancelConfirm" />
 
 @code {
     private List<PanoramaContent>? panoramas;
@@ -262,8 +211,44 @@
     private bool isSaving = false;
     private PanoramaContent editPanorama = new();
 
+    // Pagination
+    private const int PageSize = 10;
+    private int currentPage = 1;
+    private IEnumerable<PanoramaContent> FilteredItems => filteredPanoramas ?? new List<PanoramaContent>();
+    private int ClampedPage => Math.Min(currentPage, TotalPages);
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredItems.Count() / (double)PageSize));
+    private IEnumerable<PanoramaContent> pagedItems =>
+        FilteredItems.Skip((ClampedPage - 1) * PageSize).Take(PageSize);
+    private void NextPage() { if (currentPage < TotalPages) currentPage++; }
+    private void PrevPage() { if (currentPage > 1) currentPage--; }
+
+    // Shared confirm dialog
+    private bool showConfirm;
+    private string confirmTitle = "Confirm";
+    private string confirmMessage = "";
+    private bool confirmDestructive = true;
+    private Func<Task>? confirmAction;
+
+    private void OpenConfirm(string title, string message, Func<Task> action, bool destructive = true)
+    {
+        confirmTitle = title;
+        confirmMessage = message;
+        confirmAction = action;
+        confirmDestructive = destructive;
+        showConfirm = true;
+    }
+
+    private async Task RunConfirm()
+    {
+        showConfirm = false;
+        if (confirmAction != null)
+            await confirmAction();
+    }
+
+    private void CancelConfirm() => showConfirm = false;
+
     private List<PanoramaContent>? filteredPanoramas => panoramas == null ? null :
-        panoramas.Where(p => 
+        panoramas.Where(p =>
             (selectedSiteId == 0 || p.HeritageSiteId == selectedSiteId) &&
             (!statusFilter.HasValue || p.ApprovalStatus == statusFilter.Value)
         ).OrderByDescending(p => p.ApprovalStatus == ApprovalStatus.Pending)
@@ -274,7 +259,7 @@
     {
         if (AuthService.IsAdmin)
         {
-            heritageSites = await HeritageSiteService.GetAllAsync();
+            heritageSites = await HeritageSiteService.GetAllForManagementAsync();
             await LoadPanoramas();
         }
     }
@@ -329,8 +314,8 @@
 
     private async Task SavePanorama()
     {
-        if (string.IsNullOrWhiteSpace(editPanorama.Title) || 
-            string.IsNullOrWhiteSpace(editPanorama.PanoramaUrl) || 
+        if (string.IsNullOrWhiteSpace(editPanorama.Title) ||
+            string.IsNullOrWhiteSpace(editPanorama.PanoramaUrl) ||
             editPanorama.HeritageSiteId == 0)
         {
             NotificationService.RaiseNotification("Error", "Please fill in all required fields");
@@ -356,9 +341,9 @@
                 );
                 NotificationService.RaiseNotification("Success", "Panorama added successfully");
             }
-            
+
             await LoadPanoramas();
-            heritageSites = await HeritageSiteService.GetAllAsync();
+            heritageSites = await HeritageSiteService.GetAllForManagementAsync();
             StateHasChanged();
             CloseModal();
         }
@@ -372,15 +357,16 @@
         }
     }
 
-    private async Task ApprovePanorama(PanoramaContent panorama)
+    private void ApprovePanorama(PanoramaContent panorama)
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            $"Are you sure you want to approve '{panorama.Title}'?\n\n" +
-            $"Site: {heritageSites.FirstOrDefault(s => s.Id == panorama.HeritageSiteId)?.Name ?? "Unknown"}\n" +
-            $"Submitted by: {panorama.Uploader?.Name ?? "Unknown User"}");
+        OpenConfirm("Approve Panorama",
+            $"Approve '{panorama.Title}'?\nSite: {heritageSites.FirstOrDefault(s => s.Id == panorama.HeritageSiteId)?.Name ?? "Unknown"}\nSubmitted by: {panorama.Uploader?.Name ?? "Unknown User"}",
+            () => ApprovePanoramaConfirmed(panorama),
+            destructive: false);
+    }
 
-        if (!confirmed) return;
-
+    private async Task ApprovePanoramaConfirmed(PanoramaContent panorama)
+    {
         try
         {
             // Update approval status
@@ -390,6 +376,7 @@
 
             await PanoramaContentService.UpdateAsync(panorama);
             NotificationService.RaiseNotification("Success", $"Panorama '{panorama.Title}' approved successfully");
+            currentPage = 1;
             await LoadPanoramas();
             StateHasChanged();
         }
@@ -401,7 +388,7 @@
 
     private async Task RejectPanorama(PanoramaContent panorama)
     {
-        var reason = await JSRuntime.InvokeAsync<string>("prompt", 
+        var reason = await JSRuntime.InvokeAsync<string>("prompt",
             $"Please provide a reason for rejecting '{panorama.Title}':\n\n" +
             $"Site: {heritageSites.FirstOrDefault(s => s.Id == panorama.HeritageSiteId)?.Name ?? "Unknown"}\n" +
             $"Submitted by: {panorama.Uploader?.Name ?? "Unknown User"}");
@@ -427,19 +414,22 @@
         }
     }
 
-    private async Task DeletePanorama(PanoramaContent panorama)
+    private void DeletePanorama(PanoramaContent panorama)
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
-            panorama.Title != null ? 
-            $"Are you sure you want to delete '{panorama.Title}'?\n\nThis action cannot be undone." : 
-            "Are you sure you want to delete this panorama?\n\nThis action cannot be undone.");
-            
-        if (!confirmed) return;
-        
+        OpenConfirm("Delete Panorama",
+            panorama.Title != null
+                ? $"Delete '{panorama.Title}'?\nThis action cannot be undone."
+                : "Delete this panorama?\nThis action cannot be undone.",
+            () => DeletePanoramaConfirmed(panorama));
+    }
+
+    private async Task DeletePanoramaConfirmed(PanoramaContent panorama)
+    {
         try
         {
             await PanoramaContentService.DeleteAsync(panorama.Id);
             NotificationService.RaiseNotification("Success", "Panorama deleted successfully");
+            currentPage = 1;
             await LoadPanoramas();
         }
         catch (Exception ex)
@@ -452,5 +442,6 @@
     {
         selectedSiteId = 0;
         statusFilter = null;
+        currentPage = 1;
     }
-} 
+}

@@ -12,6 +12,7 @@ namespace PenangGoApi.Services
         Task<bool> SendBookingStatusUpdateEmailAsync(Booking booking, User user, Event eventItem, BookingStatus newStatus);
         Task<bool> SendSiteApprovalEmailAsync(User user, HeritageSite site);
         Task<bool> SendSiteRejectionEmailAsync(User user, HeritageSite site, string reason);
+        Task<bool> SendPasswordResetEmailAsync(User user, string resetToken);
     }
 
     public class EmailService : IEmailService
@@ -109,6 +110,54 @@ namespace PenangGoApi.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error sending site rejection email: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> SendPasswordResetEmailAsync(User user, string resetToken)
+        {
+            try
+            {
+                var subject = "PenangGo Password Reset";
+                var body = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #17a2b8, #0d6efd); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }}
+        .content {{ background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }}
+        .token {{ background: #e7f3ff; padding: 12px; border-radius: 5px; font-family: monospace; font-size: 14px; word-break: break-all; }}
+        .footer {{ text-align: center; margin-top: 20px; color: #666; font-size: 12px; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>🔑 Reset Your Password</h1>
+            <p>PenangGo account recovery</p>
+        </div>
+        <div class='content'>
+            <p>Dear <strong>{user.Name}</strong>,</p>
+            <p>We received a request to reset the password for your PenangGo account. Use the reset code below — it expires in 60 minutes:</p>
+            <div class='token'>{resetToken}</div>
+            <p>If you did not request a password reset, you can safely ignore this email.</p>
+            <p>Best regards,<br>The PenangGo Team</p>
+        </div>
+        <div class='footer'>
+            <p>This is an automated email. Please do not reply to this message.</p>
+            <p>© 2024 PenangGo - Malaysian Cultural Heritage Sites</p>
+        </div>
+    </div>
+</body>
+</html>";
+                return await SendEmailAsync(user.Email, subject, body);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending password reset email: {ex.Message}");
                 return false;
             }
         }
@@ -459,4 +508,4 @@ namespace PenangGoApi.Services
 </html>";
         }
     }
-} 
+}

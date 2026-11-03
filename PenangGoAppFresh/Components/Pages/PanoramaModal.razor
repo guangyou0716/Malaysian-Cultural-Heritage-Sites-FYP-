@@ -1,141 +1,76 @@
 @using PenangGoApp.DataAccess
-@inject PenangGoAppFresh.Services.PanoramaContentService PanoramaContentService
+@inject PenangGoAppFresh.Services.PanoramaContentService PanoramaService
 @inject PenangGoAppFresh.Services.NotificationService NotificationService
 @inject PenangGoAppFresh.Auth.AuthService AuthService
 @inject IJSRuntime JSRuntime
 
-<div class="modal-overlay" @onclick="() => OnClose.InvokeAsync()">
-    <div class="modal-content panorama-modal" @onclick:stopPropagation="true">
-        <div class="modal-header">
-            <h3>Manage Panoramas: @SelectedSite?.Name</h3>
-            <button class="btn btn-secondary" @onclick="() => OnClose.InvokeAsync()">Close</button>
+<div class="dialog-overlay" @onclick="() => OnClose.InvokeAsync()">
+    <div class="dialog-panel" style="max-width:600px;max-height:80vh;overflow-y:auto;" @onclick:stopPropagation="true">
+        <div class="d-flex justify-between items-center mb-24">
+            <h3 class="text-lg font-semibold m-0">Panoramas: @SelectedSite?.Name</h3>
+            <button class="btn-glass btn-sm" @onclick="() => OnClose.InvokeAsync()">Close</button>
         </div>
-        <div class="modal-body">
-            @if (Panoramas == null)
+
+        @if (Panoramas == null)
+        {
+            <div class="d-flex flex-col gap-12">
+                <PenangGoAppFresh.Components.Shared.Skeleton Variant="title" />
+                <PenangGoAppFresh.Components.Shared.Skeleton Variant="text" />
+                <PenangGoAppFresh.Components.Shared.Skeleton Variant="text" />
+            </div>
+        }
+        else
+        {
+            @if (Panoramas.Count == 0)
             {
-                <div class="text-center">
-                    <div class="spinner"></div>
-                    <p>Loading panoramas...</p>
-                </div>
-            }
-            else
-            {
-                <!-- Add New Panorama Section -->
-                <div class="add-panorama-section">
-                    @if (Panoramas.Count == 0)
-                    {
-                        <h4>Add Panorama Image</h4>
-                        <div class="form-group">
-                            <label>Title *:</label>
-                            <input type="text" class="form-control" @bind="NewPanorama.Title" placeholder="Enter panorama title" />
-                        </div>
-                        <div class="form-group">
-                            <label>Description:</label>
-                            <textarea class="form-control" @bind="NewPanorama.Description" rows="2" placeholder="Enter panorama description"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Panorama URL *:</label>
-                            <input type="url" class="form-control" @bind="NewPanorama.PanoramaUrl" placeholder="https://example.com/panorama.jpg" />
-                        </div>
-                        <button class="btn btn-primary" @onclick="AddPanorama" disabled="@IsAddingPanorama">
-                            @if (IsAddingPanorama)
-                            {
-                                <span class="btn-icon">⏳</span>
-                                <span>Adding...</span>
-                            }
-                            else
-                            {
-                                <span class="btn-icon">➕</span>
-                                <span>Add Panorama</span>
-                            }
+                <div class="l1-material" style="padding:var(--space-20);margin-bottom:var(--space-16);">
+                    <h4 class="text-md font-semibold mb-12">Add Panorama</h4>
+                    <div class="d-flex flex-col gap-12">
+                        <input class="input-glass" placeholder="Title *" @bind="newTitle" />
+                        <textarea class="input-glass" placeholder="Description" rows="2" @bind="newDescription"></textarea>
+                        <input class="input-glass" type="url" placeholder="Panorama image URL *" @bind="newUrl" />
+                        <button class="btn-glass btn-primary-heritage" @onclick="AddPanorama" disabled="@isAdding">
+                            @(isAdding ? "Adding..." : "Add Panorama")
                         </button>
-                    }
-                    else
-                    {
-                        <div class="existing-panorama-info">
-                            <h4>Panorama Image</h4>
-                            <p class="text-muted">This site already has a panorama image. You can edit or replace it.</p>
-                        </div>
-                    }
+                    </div>
                 </div>
+            }
 
-                <hr class="my-4" />
-
-                <!-- Existing Panoramas Section -->
-                <div class="existing-panoramas-section">
-                    <h4>Current Panorama</h4>
-                    @if (Panoramas.Count == 0)
+            @foreach (var pano in Panoramas)
+            {
+                <div class="l1-material" style="padding:var(--space-16);margin-bottom:var(--space-12);">
+                    @if (editingId == pano.Id)
                     {
-                        <div class="empty-panoramas">
-                            <p class="text-muted">No panorama image found for this site.</p>
+                        <div class="d-flex flex-col gap-8">
+                            <input class="input-glass" @bind="editTitle" />
+                            <textarea class="input-glass" rows="2" @bind="editDescription"></textarea>
+                            <input class="input-glass" type="url" @bind="editUrl" />
+                            <div class="d-flex gap-8">
+                                <button class="btn-glass btn-primary-heritage btn-sm" @onclick="SaveEdit">Save</button>
+                                <button class="btn-glass btn-sm" @onclick="CancelEdit">Cancel</button>
+                            </div>
                         </div>
                     }
                     else
                     {
-                        <div class="panoramas-grid">
-                            @foreach (var panorama in Panoramas)
-                            {
-                                <div class="panorama-card">
-                                    @if (IsEditing && EditingPanorama?.Id == panorama.Id)
-                                    {
-                                        <div class="form-group">
-                                            <label>Title *:</label>
-                                            <input type="text" class="form-control" @bind="EditingPanorama.Title" />
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Description:</label>
-                                            <textarea class="form-control" @bind="EditingPanorama.Description"></textarea>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Panorama URL *:</label>
-                                            <input type="url" class="form-control" @bind="EditingPanorama.PanoramaUrl" />
-                                        </div>
-                                        <button class="btn btn-success btn-sm" @onclick="SaveEdit" disabled="@IsSavingEdit">
-                                            @if (IsSavingEdit) { <span>Saving...</span> } else { <span>Save</span> }
-                                        </button>
-                                        <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
-                                    }
-                                    else
-                                    {
-                                        <div class="panorama-header">
-                                            <h5 class="panorama-title">@panorama.Title</h5>
-                                            <div class="panorama-actions">
-                                                <button class="btn btn-sm btn-warning" @onclick="() => StartEdit(panorama)">
-                                                    <span class="btn-icon">✏️</span>
-                                                    Edit
-                                                </button>
-                                                <button class="btn btn-sm btn-danger" @onclick="() => DeletePanorama(panorama)">
-                                                    <span class="btn-icon">🗑️</span>
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="panorama-content">
-                                            @if (!string.IsNullOrEmpty(panorama.Description))
-                                            {
-                                                <p class="panorama-description">@panorama.Description</p>
-                                            }
-                                            <div class="panorama-url">
-                                                <span class="url-label">URL:</span>
-                                                <button class="url-link" @onclick="() => OpenInNewTab(panorama.PanoramaUrl)">@panorama.PanoramaUrl</button>
-                                            </div>
-                                            <div class="panorama-meta">
-                                                <small class="text-muted">
-                                                    Uploaded: @panorama.UploadedAt.ToString("MMM dd, yyyy HH:mm")
-                                                </small>
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            }
+                        <div class="d-flex justify-between items-center">
+                            <div>
+                                <h5 class="text-md font-medium m-0">@pano.Title</h5>
+                                @if (!string.IsNullOrEmpty(pano.Description))
+                                {
+                                    <p class="text-sm text-secondary m-0 mt-4">@pano.Description</p>
+                                }
+                                <span class="text-xs text-tertiary">@pano.UploadedAt.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            <div class="d-flex gap-8">
+                                <button class="btn-glass btn-sm" @onclick="() => StartEdit(pano)">Edit</button>
+                                <button class="btn-glass btn-sm btn-accent-heritage" @onclick="() => DeletePanorama(pano)">Delete</button>
+                            </div>
                         </div>
                     }
                 </div>
             }
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" @onclick="() => OnClose.InvokeAsync()">Close</button>
-        </div>
+        }
     </div>
 </div>
 
@@ -145,109 +80,61 @@
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnRefresh { get; set; }
 
-    private PanoramaContent NewPanorama = new();
-    private bool IsAddingPanorama = false;
-    private PanoramaContent? EditingPanorama = null;
-    private bool IsEditing = false;
-    private bool IsSavingEdit = false;
+    private string newTitle = "", newDescription = "", newUrl = "";
+    private bool isAdding;
+    private int? editingId;
+    private string editTitle = "", editDescription = "", editUrl = "";
 
     private async Task AddPanorama()
     {
-        if (string.IsNullOrWhiteSpace(NewPanorama.Title) || string.IsNullOrWhiteSpace(NewPanorama.PanoramaUrl))
+        if (string.IsNullOrWhiteSpace(newTitle) || string.IsNullOrWhiteSpace(newUrl))
         {
-            NotificationService.RaiseNotification("Error", "Please fill in Title and Panorama URL");
+            NotificationService.RaiseNotification("Error", "Title and URL are required");
             return;
         }
-        if (Panoramas != null && Panoramas.Count > 0)
-        {
-            NotificationService.RaiseNotification("Error", "This site already has a panorama image. Please edit the existing one instead.");
-            return;
-        }
-        IsAddingPanorama = true;
+        isAdding = true;
         try
         {
-            await PanoramaContentService.AddAsync(
-                NewPanorama.Title,
-                NewPanorama.Description ?? "",
-                NewPanorama.PanoramaUrl,
-                AuthService.CurrentUser?.Id ?? 0,
-                SelectedSite!.Id
-            );
-            NotificationService.RaiseNotification("Success", $"Panorama '{NewPanorama.Title}' added successfully");
-            NewPanorama = new PanoramaContent { HeritageSiteId = SelectedSite.Id };
+            await PanoramaService.AddAsync(newTitle, newDescription, newUrl, AuthService.CurrentUser?.Id ?? 0, SelectedSite!.Id);
+            NotificationService.RaiseNotification("Success", "Panorama added");
+            newTitle = ""; newDescription = ""; newUrl = "";
             if (OnRefresh.HasDelegate) await OnRefresh.InvokeAsync();
         }
-        catch (Exception ex)
-        {
-            NotificationService.RaiseNotification("Error", $"Failed to add panorama: {ex.Message}");
-        }
-        finally
-        {
-            IsAddingPanorama = false;
-        }
+        catch (Exception ex) { NotificationService.RaiseNotification("Error", $"Failed: {ex.Message}"); }
+        finally { isAdding = false; }
     }
 
-    private void StartEdit(PanoramaContent panorama)
+    private void StartEdit(PanoramaContent p)
     {
-        EditingPanorama = new PanoramaContent
-        {
-            Id = panorama.Id,
-            Title = panorama.Title,
-            Description = panorama.Description,
-            PanoramaUrl = panorama.PanoramaUrl,
-            HeritageSiteId = panorama.HeritageSiteId,
-            UploadedBy = panorama.UploadedBy,
-            UploadedAt = panorama.UploadedAt
-        };
-        IsEditing = true;
+        editingId = p.Id; editTitle = p.Title; editDescription = p.Description ?? ""; editUrl = p.PanoramaUrl;
     }
 
     private async Task SaveEdit()
     {
-        if (EditingPanorama == null) return;
-        IsSavingEdit = true;
+        if (editingId == null) return;
         try
         {
-            await PanoramaContentService.UpdateAsync(EditingPanorama);
-            NotificationService.RaiseNotification("Success", $"Panorama '{EditingPanorama.Title}' updated successfully");
-            IsEditing = false;
-            EditingPanorama = null;
+            var updated = new PanoramaContent { Id = editingId.Value, Title = editTitle, Description = editDescription, PanoramaUrl = editUrl };
+            await PanoramaService.UpdateAsync(updated);
+            NotificationService.RaiseNotification("Success", "Updated");
+            editingId = null;
             if (OnRefresh.HasDelegate) await OnRefresh.InvokeAsync();
         }
-        catch (Exception ex)
-        {
-            NotificationService.RaiseNotification("Error", $"Failed to update panorama: {ex.Message}");
-        }
-        finally
-        {
-            IsSavingEdit = false;
-        }
+        catch (Exception ex) { NotificationService.RaiseNotification("Error", $"Failed: {ex.Message}"); }
     }
 
-    private void CancelEdit()
-    {
-        IsEditing = false;
-        EditingPanorama = null;
-    }
+    private void CancelEdit() => editingId = null;
 
-    private async Task DeletePanorama(PanoramaContent panorama)
+    private async Task DeletePanorama(PanoramaContent p)
     {
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete '{panorama.Title}'?\n\nThis action cannot be undone.");
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Delete '{p.Title}'?");
         if (!confirmed) return;
         try
         {
-            await PanoramaContentService.DeleteAsync(panorama.Id);
-            NotificationService.RaiseNotification("Success", $"Panorama '{panorama.Title}' deleted successfully");
+            await PanoramaService.DeleteAsync(p.Id);
+            NotificationService.RaiseNotification("Success", "Deleted");
             if (OnRefresh.HasDelegate) await OnRefresh.InvokeAsync();
         }
-        catch (Exception ex)
-        {
-            NotificationService.RaiseNotification("Error", $"Failed to delete panorama: {ex.Message}");
-        }
+        catch (Exception ex) { NotificationService.RaiseNotification("Error", $"Failed: {ex.Message}"); }
     }
-
-    private async Task OpenInNewTab(string url)
-    {
-        await JSRuntime.InvokeVoidAsync("window.open", url, "_blank");
-    }
-} 
+}

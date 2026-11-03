@@ -1,171 +1,83 @@
 @page "/event/{id:int}"
-@using System.Collections.Generic
 @inject PenangGoAppFresh.Services.EventService EventService
 @inject NavigationManager Navigation
 @inject PenangGoAppFresh.Auth.AuthService AuthService
-@inject PenangGoAppFresh.Services.IApiBookingService BookingService
 
-<div class="site-details-container fade-in">
+<div style="max-width:640px;margin:0 auto;">
     @if (eventData == null)
     {
-        <div class="loading-state">
-            <div class="loading-spinner"></div>
-            <p>Loading event details...</p>
+        <div class="d-flex flex-col gap-16">
+            <PenangGoAppFresh.Components.Shared.Skeleton Variant="image" Style="height:260px;" />
+            <PenangGoAppFresh.Components.Shared.Skeleton Variant="title" />
+            <PenangGoAppFresh.Components.Shared.Skeleton Variant="text" />
         </div>
     }
     else
     {
-        <!-- Hero Section -->
-        <div class="site-hero">
-            <div class="hero-image" style="background:@(eventData.Gradient ?? "linear-gradient(135deg, #D4AF37, #8B0000)");">
-                <div class="hero-overlay">
-                    <div class="hero-content">
-                        <h1 class="site-title">@eventData.Title</h1>
-                        <div class="site-location">
-                            <span class="location-icon">@eventData.Icon</span>
-                            @eventData.Location
-                        </div>
-                    </div>
+        <!-- Hero -->
+        <div class="l0-content" style="position:relative;border-radius:var(--radius-xl);overflow:hidden;margin-bottom:var(--space-24);">
+            <img src="@(string.IsNullOrEmpty(eventData.ImageUrl) ? "/images/penanggo_logo.png" : eventData.ImageUrl)"
+                 alt="@eventData.Title" style="width:100%;height:260px;object-fit:cover;display:block;"
+                 onerror="this.src='/images/penanggo_logo.png'" />
+            <div class="l2-glass" style="position:absolute;bottom:var(--space-16);left:var(--space-16);right:var(--space-16);padding:var(--space-16);border-radius:var(--radius-lg);">
+                <h1 class="text-xl font-bold tracking-tight m-0">@eventData.Title</h1>
+                <p class="text-sm text-secondary m-0 mt-4">@eventData.Location</p>
+            </div>
+        </div>
+
+        <!-- Details -->
+        <div class="l1-material" style="padding:var(--space-24);margin-bottom:var(--space-24);">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-16);">
+                <div>
+                    <div class="text-xs text-secondary font-medium mb-4">Date</div>
+                    <div class="text-sm font-medium">@eventData.StartTime.ToString("MMM dd, yyyy")</div>
+                </div>
+                <div>
+                    <div class="text-xs text-secondary font-medium mb-4">Time</div>
+                    <div class="text-sm font-medium">@eventData.StartTime.ToString("HH:mm") - @eventData.EndTime.ToString("HH:mm")</div>
+                </div>
+                <div>
+                    <div class="text-xs text-secondary font-medium mb-4">Price</div>
+                    <div class="text-sm font-medium">@(eventData.Price > 0 ? $"RM {eventData.Price:F2}" : "Free")</div>
+                </div>
+                <div>
+                    <div class="text-xs text-secondary font-medium mb-4">Availability</div>
+                    @{
+                        var spots = eventData.MaxCapacity - eventData.CurrentBookings;
+                    }
+                    <PenangGoAppFresh.Components.Shared.StatusBadge Text="@(spots > 0 ? $"{spots} spots" : "Sold Out")" Variant="@(spots > 0 ? "teal" : "error")" />
                 </div>
             </div>
         </div>
 
-        <!-- Main Content -->
-        <div class="site-content">
-            <div class="content-grid">
-                <!-- Event Information -->
-                <div class="site-info-card">
-                    <div class="card-header">
-                        <div class="card-icon">@eventData.Icon</div>
-                        <h3 class="card-title">About This Event</h3>
-                    </div>
-                    <div class="card-body">
-                        <p class="site-description">@eventData.Description</p>
-                        <div class="site-actions">
-                            <button class="btn btn-primary" @onclick="BookEvent" disabled="@isBooked">
-                                <span class="btn-icon">🎫</span>
-                                @(isBooked ? "Booked" : "Book Now")
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Stats -->
-                <div class="stats-card">
-                    <div class="card-header">
-                        <div class="card-icon">📊</div>
-                        <h3 class="card-title">Event Details</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <div class="stat-icon">📅</div>
-                                <div class="stat-content">
-                                    <h4>@eventData.Date.ToString("MMM dd, yyyy")</h4>
-                                    <p>Date</p>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon">🕐</div>
-                                <div class="stat-content">
-                                    <h4>@eventData.Time</h4>
-                                    <p>Time</p>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon">💰</div>
-                                <div class="stat-content">
-                                    <h4>@eventData.Price</h4>
-                                    <p>Price</p>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon">🏷️</div>
-                                <div class="stat-content">
-                                    <h4>@eventData.Type</h4>
-                                    <p>Type</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- Description -->
+        <div class="l1-material" style="padding:var(--space-24);margin-bottom:var(--space-24);">
+            <h2 class="text-md font-semibold mb-12">About This Event</h2>
+            <p class="text-sm text-secondary" style="line-height:var(--leading-relaxed);margin:0;">@eventData.Description</p>
         </div>
+
+        <!-- Action -->
+        @if (eventData.CurrentBookings < eventData.MaxCapacity)
+        {
+            <button class="btn-glass btn-primary-heritage btn-lg w-full"
+                    @onclick="@(() => Navigation.NavigateTo($"/payment?EventId={eventData.Id}&EventTitle={Uri.EscapeDataString(eventData.Title ?? "")}&EventDate={eventData.StartTime:yyyy-MM-dd}&EventLocation={Uri.EscapeDataString(eventData.Location ?? "")}&EventPrice={(eventData.Price > 0 ? $"RM {eventData.Price:F2}" : "Free")}"))">
+                Book Now
+            </button>
+        }
+        else
+        {
+            <button class="btn-glass btn-lg w-full" disabled>This event is sold out</button>
+        }
     }
 </div>
 
 @code {
-    [Parameter]
-    public int id { get; set; }
-    private EventViewModel eventData;
-    private bool isBooked = false;
+    [Parameter] public int Id { get; set; }
+    private PenangGoApp.DataAccess.Event? eventData;
 
     protected override async Task OnInitializedAsync()
     {
-        var dbEvent = await EventService.GetByIdAsync(id);
-        if (dbEvent != null)
-        {
-            eventData = new EventViewModel
-            {
-                Id = dbEvent.Id,
-                Title = dbEvent.Name,
-                Type = dbEvent.Type ?? "",
-                Icon = dbEvent.Icon ?? "🎉",
-                Date = dbEvent.StartTime,
-                Time = dbEvent.StartTime.ToString("hh:mm tt") + (dbEvent.EndTime != null ? $" - {dbEvent.EndTime:hh:mm tt}" : ""),
-                Location = dbEvent.Location,
-                Price = dbEvent.Price.HasValue ? $"RM {dbEvent.Price.Value:F2}" : "Free",
-                Description = dbEvent.Description,
-                Gradient = dbEvent.Gradient ?? "linear-gradient(135deg, #D4AF37, #8B0000)",
-                IsPopular = dbEvent.IsPopular,
-                IsNew = dbEvent.IsNew
-            };
-            if (AuthService.IsLoggedIn)
-            {
-                var userBookings = await BookingService.GetUserBookingsAsync(AuthService.CurrentUser.Id);
-                isBooked = userBookings.Any(b => b.EventId == dbEvent.Id);
-            }
-        }
+        try { eventData = await EventService.GetByIdAsync(Id); }
+        catch { eventData = null; }
     }
-
-    private async void BookEvent()
-    {
-        if (!AuthService.IsLoggedIn)
-        {
-            Navigation.NavigateTo("/login");
-            return;
-        }
-        if (!isBooked)
-        {
-            // Redirect to payment page with details
-            var queryParams = new Dictionary<string, string>
-            {
-                ["EventTitle"] = eventData.Title,
-                ["EventDate"] = eventData.Date.ToString("yyyy-MM-dd"),
-                ["EventTime"] = eventData.Time,
-                ["EventLocation"] = eventData.Location,
-                ["EventPrice"] = eventData.Price,
-                ["EventId"] = eventData.Id.ToString()
-            };
-            
-            var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-            Navigation.NavigateTo($"/payment?{queryString}");
-        }
-    }
-
-    public class EventViewModel
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = "";
-        public string Type { get; set; } = "";
-        public string Icon { get; set; } = "";
-        public DateTime Date { get; set; }
-        public string Time { get; set; } = "";
-        public string Location { get; set; } = "";
-        public string Price { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string Gradient { get; set; } = "";
-        public bool IsPopular { get; set; }
-        public bool IsNew { get; set; }
-    }
-} 
+}

@@ -1,229 +1,93 @@
 ﻿@inherits LayoutComponentBase
 @inject PenangGoAppFresh.Services.NotificationService NotificationService
+@inject PenangGoAppFresh.Services.OfflineSyncService OfflineSync
 @inject PenangGoAppFresh.Auth.AuthService AuthService
+@inject IJSRuntime JSRuntime
 @implements IDisposable
 @inject NavigationManager Navigation
-@using Microsoft.Maui.Devices
 
-<div class="app-container">
-    <!-- Notification Banner -->
+<div class="app-shell" style="min-height:100dvh;background:var(--canvas-bg);font-family:var(--font-system);color:var(--text-primary);">
+    <!-- Notification Toast -->
     @if (!string.IsNullOrEmpty(notificationTitle))
     {
-        <div class="notification-banner">
-            <strong>@notificationTitle</strong>: @notificationBody
-            <button class="close-btn" @onclick="ClearNotification">×</button>
+        <div class="l2-glass-dense" style="position:fixed;top:calc(var(--space-16) + var(--safe-top));left:50%;transform:translateX(-50%);z-index:var(--z-toast);padding:var(--space-12) var(--space-20);max-width:400px;text-align:center;">
+            <strong class="text-sm font-semibold">@notificationTitle</strong>
+            @if (!string.IsNullOrEmpty(notificationBody))
+            {
+                <p class="text-xs text-secondary m-0 mt-4">@notificationBody</p>
+            }
+            <button class="btn-glass btn-sm" style="position:absolute;top:4px;right:4px;padding:2px 6px;" @onclick="ClearNotification">×</button>
         </div>
     }
-    <!-- Header -->
-    <header class="app-header">
-        <div class="header-content">
-            <div class="header-left">
-                <button type="button" class="nav-toggle-btn" @onclick="ToggleNavMenu">
-                    <span class="toggle-icon">☰</span>
-                </button>
-                <div class="logo-section">
-                    <div class="logo-icon"><img src="/images/penanggo_logo.png" alt="PenangGo Logo" style="max-height: 50px;max-width: 50px;" /></div>
-                    <h1 class="app-title">PenangGo</h1>
-                    <span class="app-subtitle">Cultural Heritage</span>
-                </div>
-            </div>
-            <div class="user-section">
-                <div class="user-info">
-                    <span class="user-name">@(AuthService.IsLoggedIn ? AuthService.CurrentUser?.Name : "Guest")</span>
-                    <span class="user-role">@(AuthService.IsLoggedIn ? (AuthService.IsAdmin ? "Admin" : "User") : "Visitor")</span>
-                </div>
-                @if (!AuthService.IsLoggedIn)
-                {
-                    <button class="login-btn" @onclick="@(() => NavigateAndCloseIfAndroid("/login"))">
-                        <span class="login-icon">🔑</span>
-                    </button>
-                }
-                else
-                {
-                    <button class="login-btn" @onclick="@(() => NavigateAndCloseIfAndroid("/logout"))">
-                        <span class="login-icon">🚪</span>
-                    </button>
-                }
-            </div>
-        </div>
-    </header>
+
+    <!-- Desktop Nav Rail -->
+    <PenangGoAppFresh.Components.Layout.DesktopNavRail />
+
+    <!-- Mobile Bottom Dock -->
+    <PenangGoAppFresh.Components.Layout.MobileBottomDock />
 
     <!-- Main Content Area -->
-    <main class="main-content @(IsNavMenuOpen ? "nav-open" : "nav-closed")">
-        @if (IsNavMenuOpen)
-        {
-            <!-- Sidebar Navigation -->
-            <aside class="sidebar sidebar-open">
-                <nav class="nav-menu">
-                    @if (AuthService.IsLoggedIn && AuthService.IsAdmin)
-                    {
-                        <!-- Admin Navigation -->
-                        <div class="nav-section">
-                            <h3 class="nav-title">Admin Dashboard</h3>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/admindashboard"))">
-                                <span class="nav-icon">📊</span>
-                                <span class="nav-text">Dashboard</span>
-                            </button>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/adminsites"))">
-                                <span class="nav-icon">🏛️</span>
-                                <span class="nav-text">Manage Sites</span>
-                            </button>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/admin-panoramas"))">
-                                <span class="nav-icon">🏛️</span>
-                                <span class="nav-text">Manage Panoramas Site</span>
-                            </button>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/adminevents"))">
-                                <span class="nav-icon">🎉</span>
-                                <span class="nav-text">Manage Events</span>
-                            </button>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/adminusers"))">
-                                <span class="nav-icon">👥</span>
-                                <span class="nav-text">Manage Users</span>
-                            </button>
-                        </div>
-
-                        <div class="nav-section">
-                            <h3 class="nav-title">Content Management</h3>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/adminbookings"))">
-                                <span class="nav-icon">📅</span>
-                                <span class="nav-text">All Bookings</span>
-                            </button>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/adminreviews"))">
-                                <span class="nav-icon">⭐</span>
-                                <span class="nav-text">Reviews</span>
-                            </button>
-                        </div>
-
-                        <div class="nav-section">
-                            <h3 class="nav-title">Account</h3>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/logout"))">
-                                <span class="nav-icon">🚪</span>
-                                <span class="nav-text">Logout</span>
-                            </button>
-                        </div>
-                    }
-                    else
-                    {
-                        <!-- Regular User Navigation -->
-                        <div class="nav-section">
-                            <h3 class="nav-title">Explore</h3>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/"))">
-                                <span class="nav-icon">🏠</span>
-                                <span class="nav-text">Home</span>
-                            </button>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/map"))">
-                                <span class="nav-icon">🗺️</span>
-                                <span class="nav-text">Interactive Map</span>
-                            </button>
-                        </div>
-
-                        <div class="nav-section">
-                            <h3 class="nav-title">Experience</h3>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/events"))">
-                                <span class="nav-icon">🎉</span>
-                                <span class="nav-text">Events & Tours</span>
-                            </button>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/booking"))">
-                                <span class="nav-icon">📅</span>
-                                <span class="nav-text">Bookings</span>
-                            </button>
-                        </div>
-
-                        <div class="nav-section">
-                            <h3 class="nav-title">Contribute</h3>
-                            <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/submit-content"))">
-                                <span class="nav-icon">📝</span>
-                                <span class="nav-text">Submit Content</span>
-                            </button>
-                        </div>
-
-                        <div class="nav-section">
-                            <h3 class="nav-title">Account</h3>
-                            @if (!AuthService.IsLoggedIn)
-                            {
-                                <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/login"))">
-                                    <span class="nav-icon">🔑</span>
-                                    <span class="nav-text">Login</span>
-                                </button>
-                                <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/signup"))">
-                                    <span class="nav-icon">📝</span>
-                                    <span class="nav-text">Sign Up</span>
-                                </button>
-                            }
-                            else
-                            {
-                                <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/dashboard"))">
-                                    <span class="nav-icon">📊</span>
-                                    <span class="nav-text">Dashboard</span>
-                                </button>
-                                <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/profile"))">
-                                    <span class="nav-icon">👤</span>
-                                    <span class="nav-text">Profile Settings</span>
-                                </button>
-                                <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/mybookmarks"))">
-                                    <span class="nav-icon">🔖</span>
-                                    <span class="nav-text">My Bookmarks</span>
-                                </button>
-                                <button class="nav-item" @onclick="@(() => NavigateAndCloseIfAndroid("/logout"))">
-                                    <span class="nav-icon">🚪</span>
-                                    <span class="nav-text">Logout</span>
-                                </button>
-                            }
-                        </div>
-                    }
-                </nav>
-            </aside>
-        }
-
-        <!-- Page Content -->
-        <div class="page-content" style="width:100%;">
+    <main class="main-content-area" style="padding-left:96px;padding-right:var(--space-16);padding-top:var(--space-16);padding-bottom:80px;">
+        <div style="max-width:1100px;margin:0 auto;">
             @Body
         </div>
     </main>
 </div>
 
-@code {
-    private bool IsNavMenuOpen { get; set; } = true;
-    private string notificationTitle;
-    private string notificationBody;
+<style>
+    @@media (max-width: 767px) {
+        .main-content-area {
+            padding-left: var(--space-16) !important;
+            padding-right: var(--space-16) !important;
+            padding-bottom: 100px !important;
+        }
+    }
+</style>
 
-    protected override void OnInitialized()
+@code {
+    private string? notificationTitle;
+    private string? notificationBody;
+
+    protected override async Task OnInitializedAsync()
     {
         NotificationService.OnNotificationReceived += ShowNotification;
         AuthService.AuthStateChanged += OnAuthStateChanged;
+        // Restore a persisted session (refresh token) across app restarts
+        await AuthService.RestoreSessionAsync();
+        // Apply persisted appearance preferences
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("penangGoTheme.apply", PenangGoAppFresh.Services.AppSettings.Theme);
+            await JSRuntime.InvokeVoidAsync("penangGoTheme.setReducedMotion", PenangGoAppFresh.Services.AppSettings.ReduceMotion);
+        }
+        catch { }
+
+        // Prime the offline cache/outbox (SQLite) and refresh it in the background
+        try { await OfflineSync.InitializeAsync(); } catch { }
     }
+
     private void ShowNotification(string title, string body)
     {
         notificationTitle = title;
         notificationBody = body;
         StateHasChanged();
     }
+
     private void ClearNotification()
     {
         notificationTitle = null;
         notificationBody = null;
         StateHasChanged();
     }
-    private void ToggleNavMenu()
-    {
-        IsNavMenuOpen = !IsNavMenuOpen;
-    }
+
     private void OnAuthStateChanged()
     {
         InvokeAsync(StateHasChanged);
     }
+
     public void Dispose()
     {
         NotificationService.OnNotificationReceived -= ShowNotification;
         AuthService.AuthStateChanged -= OnAuthStateChanged;
-    }
-
-    void NavigateAndCloseIfAndroid(string url)
-    {
-        if (DeviceInfo.Platform == DevicePlatform.Android)
-        {
-            IsNavMenuOpen = false;
-        }
-        Navigation.NavigateTo(url);
     }
 }

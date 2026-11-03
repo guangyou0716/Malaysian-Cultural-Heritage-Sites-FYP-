@@ -1,0 +1,15 @@
+<div class="state-container">
+    <div class="state-icon" style="color: var(--color-error);">!</div>
+    <h3 class="state-title">@Title</h3>
+    <p class="state-description">@Message</p>
+    @if (OnRetry.HasDelegate)
+    {
+        <button class="btn-glass btn-primary-heritage" @onclick="OnRetry">Try Again</button>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Something went wrong";
+    [Parameter] public string Message { get; set; } = "Please check your connection and try again.";
+    [Parameter] public EventCallback OnRetry { get; set; }
+}

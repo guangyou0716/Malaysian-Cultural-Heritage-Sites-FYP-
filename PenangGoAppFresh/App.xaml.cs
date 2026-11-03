@@ -18,8 +18,8 @@ public partial class App : Application
 
         _isInitialized = true;
 
-        var window = new Window(new MainPage()) 
-        { 
+        var window = new Window(new MainPage())
+        {
             Title = "PenangGo - Malaysian Cultural Heritage",
             Width = 1200,
             Height = 800

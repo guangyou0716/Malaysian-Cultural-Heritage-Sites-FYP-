@@ -14,7 +14,13 @@ class Program
             return;
         }
 
-        var connectionString = "server=localhost;database=penang_go;user=root;password=1234;";
+        var connectionString = Environment.GetEnvironmentVariable("PENANGGO_DB_CONNECTION");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            Console.WriteLine("Set the PENANGGO_DB_CONNECTION environment variable to your MySQL connection string, e.g.:");
+            Console.WriteLine("  PENANGGO_DB_CONNECTION=\"server=localhost;database=penang_go;user=<user>;password=<password>\"");
+            Environment.Exit(1);
+        }
 
         try
         {
@@ -42,4 +48,4 @@ class Program
             Environment.Exit(1);
         }
     }
-} 
+}

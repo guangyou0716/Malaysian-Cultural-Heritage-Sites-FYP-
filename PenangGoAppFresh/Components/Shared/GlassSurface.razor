@@ -1,0 +1,31 @@
+@* GlassSurface — L0/L1/L2 material surface *@
+@{
+    var levelClass = Level switch
+    {
+        0 => "l0-content",
+        2 => Interactive ? "l2-glass l2-glass-interactive" : "l2-glass",
+        _ => "l1-material"
+    };
+    var toneClass = Tone switch
+    {
+        "elevated" => "l1-material-elevated",
+        "subtle" => "l2-glass-subtle",
+        "dense" => "l2-glass-dense",
+        _ => ""
+    };
+    var css = $"{levelClass} {toneClass} {Class}".Trim();
+}
+
+<div class="@css" style="@Style" @attributes="ExtraAttributes">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public int Level { get; set; } = 1;
+    [Parameter] public string? Tone { get; set; }
+    [Parameter] public bool Interactive { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? ExtraAttributes { get; set; }
+}

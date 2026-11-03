@@ -40,17 +40,5 @@ namespace PenangGoAppFresh.Auth
 
             return hasUpperCase && hasLowerCase && hasDigit && hasSpecialChar;
         }
-
-        public static string GetAdminPasswordHash()
-        {
-            var (hash, salt) = CreatePasswordHash("Admin123!");
-            return hash;
-        }
-
-        public static string GetAdminPasswordSalt()
-        {
-            var (hash, salt) = CreatePasswordHash("Admin123!");
-            return salt;
-        }
     }
-} 
+}

@@ -13,6 +13,8 @@ namespace PenangGoApp.DataAccess
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Bookmark> Bookmarks { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<SiteVisitBooking> SiteVisitBookings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -59,6 +61,16 @@ namespace PenangGoApp.DataAccess
                 entity.Property(e => e.Comment).IsRequired();
             });
 
+            // SiteVisitBooking configuration
+            modelBuilder.Entity<SiteVisitBooking>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId);
+                entity.HasOne(e => e.Site).WithMany(s => s.SiteVisitBookings).HasForeignKey(e => e.HeritageSiteId);
+                entity.Property(e => e.Status).HasConversion<string>();
+                entity.HasIndex(e => new { e.HeritageSiteId, e.VisitDate, e.Status });
+            });
+
             // HeritageSite configuration
             modelBuilder.Entity<HeritageSite>(entity =>
             {
@@ -82,87 +94,6 @@ namespace PenangGoApp.DataAccess
                 entity.Property(e => e.MaxCapacity).IsRequired();
                 entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
             });
-
-            // Seed data for testing
-            SeedData(modelBuilder);
-        }
-
-        private void SeedData(ModelBuilder modelBuilder)
-        {
-            // Create a default admin user
-            var (adminHash, adminSalt) = CreatePasswordHash("Admin123!");
-            var adminUser = new User
-            {
-                Id = 1,
-                Name = "Admin User",
-                Email = "admin@penanggo.com",
-                PasswordHash = adminHash,
-                PasswordSalt = adminSalt,
-                IsAdmin = true,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                EmailNotificationsEnabled = true,
-                PushNotificationsEnabled = true
-            };
-
-            modelBuilder.Entity<User>().HasData(adminUser);
-
-            // Create some sample heritage sites
-            var heritageSites = new List<HeritageSite>
-            {
-                new HeritageSite
-                {
-                    Id = 1,
-                    Name = "Khoo Kongsi",
-                    Description = "A large Chinese clanhouse with elaborate and highly ornamented architecture.",
-                    Location = "Cannon Square, George Town, Penang",
-                    Latitude = 5.4164,
-                    Longitude = 100.3327,
-                    HasPanoramaContent = true,
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                },
-                new HeritageSite
-                {
-                    Id = 2,
-                    Name = "Cheong Fatt Tze Mansion",
-                    Description = "A distinctive blue-colored mansion built in the 1880s.",
-                    Location = "14 Leith Street, George Town, Penang",
-                    Latitude = 5.4214,
-                    Longitude = 100.3412,
-                    HasPanoramaContent = true,
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                }
-            };
-
-            modelBuilder.Entity<HeritageSite>().HasData(heritageSites);
-
-            // Create some sample events
-            var events = new List<Event>
-            {
-                new Event
-                {
-                    Id = 1,
-                    Title = "Heritage Walking Tour",
-                    Description = "Explore the historic streets of George Town with our expert guide.",
-                    StartTime = DateTime.UtcNow.AddDays(7),
-                    EndTime = DateTime.UtcNow.AddDays(7).AddHours(3),
-                    Location = "George Town Heritage Zone",
-                    MaxCapacity = 20,
-                    CurrentBookings = 0,
-                    Price = 50.00m,
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                }
-            };
-
-            modelBuilder.Entity<Event>().HasData(events);
-        }
-
-        private (string hash, string salt) CreatePasswordHash(string password)
-        {
-            return PasswordUtility.CreatePasswordHash(password);
         }
     }
-} 
+}
